@@ -1,0 +1,6 @@
+var ButtonElements = document.querySelectorAll(".ms-Button");
+    for (var i = 0; i < ButtonElements.length; i++) {
+        new fabric['Button'](ButtonElements[i], function() {
+        // Insert Event Here
+    });
+}

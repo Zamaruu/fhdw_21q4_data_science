@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./css/global.css">
+    <link rel="stylesheet" href="./css/navbar.css">
+    <link rel="stylesheet" href="./css/content.css">
+    <script src="./js/navbar.js"></script>
+    <script src="./js/initFabricCore.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.6.0/chart.min.js" integrity="sha512-GMGzUEevhWh8Tc/njS0bDpwgxdCJLQBWG3Z2Ct+JGOpVnEmjvNx6ts4v6A2XJf1HOrtOsfhv3hBKpK9kE5z8AQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.min.css" />
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.components.min.css" />
+    <script src="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/js/fabric.min.js"></script>
+    <title>Wetteranalyse</title>
+</head>
+<body>
+    <header>
+        <div class="topnav" id="myTopnav">
+            <a href="#forecastLR" class="active">Forecast (LR)</a>
+            <a href="#forecastkNN">Forecast (kNN)</a>
+            <a href="#acf">AKF</a>
+            <a href="javascript:void(0);" class="icon" onclick="navbarClick()">
+              <i class="ms-Icon ms-Icon--GlobalNavButton"></i>
+            </a>
+        </div>
+    </header>
+    <div class="content-body">
+        <div class="ms-Grid" dir="ltr">
+            <div class="ms-Grid-row">
+                <div class="ms-Grid-col ms-sm6 ms-md4 ms-lg2">
+                    <button onclick="myFunction()" class="ms-Button ms-Button--primary">
+                        <span class="ms-Button-label">Start Pythonscript</span> 
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    function myFunction() {
+      alert("TODO - Pythonskript schreiben");
+    }
+</script>
+</html>
