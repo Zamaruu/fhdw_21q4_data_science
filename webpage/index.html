@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Projekt Algorithmen</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta charset="UTF-8">
+
+    <script src="chartjs/chart.min.js"></script>
+</head>
+
+<body>
+
+    <div>
+        <canvas id="chart"></canvas>
+    </div>
+
+    <form class="form-inline">
+        <input type="file" id="files" class="form-control" accept=".csv" required multiple />
+    </form>
+
+    <p id="test"></p>
+    <script>
+        // Files lesen
+        var fileInput = document.querySelector("#files")
+        var chart = null
+
+        function readmultifiles(files) {
+            return new Promise((resolve, reject) => {
+                var reader = new FileReader();
+                function readFile(index) {
+                    return new Promise((resolve, reject) => {
+                        if (index >= files.length) { resolve(); return };
+                        var file = files[index];
+                        reader.onload = async function (e) {
+                            var bin = e.target.result;
+                            bin += await readFile(index + 1)
+                            resolve(bin)
+                        }
+                        reader.readAsBinaryString(file);
+                    })
+                }
+                resolve(readFile(0))
+            })
+        }
+
+        fileInput.addEventListener('change', async function () {
+            if (chart != null)
+                chart.clear()
+
+            var len_files = fileInput.files.length
+            var csv = await readmultifiles(fileInput.files)
+
+            csv = csv.split("\n")
+
+            var header = []
+            var data = []
+
+            csv.forEach((element, idx) => {
+                csv[idx] = element.split(",")
+            })
+
+            csv.sort()
+            csv.splice(len_files * -1)
+
+            csv.forEach(element => {
+                header.push(element[0])
+                data.push(element[1])
+            });
+
+            buildChart(data, header)
+        });
+
+        var buildChart = function (dataset, label) {
+            const data = {
+                labels: label,
+                datasets: [{
+                    label: "Paderborn Durchsch. Temperatur",
+                    data: dataset,
+                    backgroundColor: [
+                        'rgb(16, 16, 16)',
+                    ]
+                }]
+            }
+
+            const config = {
+                type: "line",
+                data: data,
+            }
+
+            chart = new Chart(
+                document.getElementById("chart"),
+                config
+            )
+        }
+    </script>
+</body>
+
+</html>
