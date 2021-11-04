@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="./css/navbar.css">
     <link rel="stylesheet" href="./css/content.css">
     <script src="./js/navbar.js"></script>
-    <script src="./js/initFabricCore.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.6.0/chart.min.js" integrity="sha512-GMGzUEevhWh8Tc/njS0bDpwgxdCJLQBWG3Z2Ct+JGOpVnEmjvNx6ts4v6A2XJf1HOrtOsfhv3hBKpK9kE5z8AQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.min.css" />
     <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.components.min.css" />
@@ -22,7 +21,7 @@
             <a href="#forecastkNN">Forecast (kNN)</a>
             <a href="#acf">AKF</a>
             <a href="javascript:void(0);" class="icon" onclick="navbarClick()">
-              <i class="ms-Icon ms-Icon--GlobalNavButton"></i>
+              <i id="topnav-icon" class="ms-Icon ms-Icon--GlobalNavButton"></i>
             </a>
         </div>
     </header>
@@ -34,6 +33,48 @@
                         <span class="ms-Button-label">Start Pythonscript</span> 
                     </button>
                 </div>
+                <div class="ms-Grid-col ms-sm6 ms-md4 ms-lg2">
+                    <div class="ms-CalloutExample">
+                        <div class="ms-Callout is-hidden">
+                          <div class="ms-Callout-main">
+                            <div class="ms-Callout-header">
+                              <p class="ms-Callout-title">Wetterdaten - Meteostat</p>
+                            </div>
+                            <div class="ms-Callout-inner">
+                              <div class="ms-Callout-content">
+                                <p class="ms-Callout-subText">Die Daten die in dieser Web-Anwendung analysiert werden können, wurden bei Meteostat in Form von CSV-Dateien erhoben.</p>
+                              </div>
+                              <div class="ms-Callout-actions">
+                                <a href="https://meteostat.net/de/place/47R0P0?t=2011-01-01/2019-12-31" class="ms-Link" target="_blank">Mehr erfahren</a> 
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="ms-CalloutExample-button">
+                          <button class="ms-Button">
+                            <span class="ms-Button-label">Datenquelle</span> 
+                          </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="ms-Grid-col ms-sm6 ms-md4 ms-lg2">
+                    <div class="ms-PanelExample">
+                        <button class="ms-Button">
+                          <span class="ms-Button-label">Open Panel</span> 
+                        </button>
+                        <div class="ms-Panel">
+                          <button class="ms-Panel-closeButton ms-PanelAction-close">
+                            <i class="ms-Panel-closeIcon ms-Icon ms-Icon--Cancel"></i>
+                          </button>
+                          <div class="ms-Panel-contentInner">
+                            <p class="ms-Panel-headerText">Panel</p>
+                            <div class="ms-Panel-content">
+                              <span class="ms-font-m">Content goes here</span> 
+                            </div>
+                          </div>
+                        </div>
+                    </div>
+                </div>      
             </div>
         </div>
     </div>
@@ -43,6 +84,7 @@
       alert("TODO - Pythonskript schreiben");
     }
 </script>
+<script src="./js/initFabricCore.js"></script>
 <html>
 
 <!-- <head>
