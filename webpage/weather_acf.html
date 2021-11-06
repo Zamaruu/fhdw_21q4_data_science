@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./css/global.css">
+    <link rel="stylesheet" href="./css/navbar.css">
+    <link rel="stylesheet" href="./css/content.css">
+    <script src="./js/navbar.js"></script>
+    <script src="./js/chartjs/chart.min.js"></script>
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.min.css" />
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.components.min.css" />
+    <script src="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/js/fabric.min.js"></script>
+    <title>Wetteranalyse - ACF</title>
+</head>
+<body>
+    <header>
+        <div class="topnav" id="myTopnav">
+            <a href="./index.html">Forecast (LR)</a>
+            <a href="./weather_forecast_knn.html">Forecast (kNN)</a>
+            <a href="#acf" class="active">AKF</a>
+            <a href="javascript:void(0);" class="icon" onclick="navbarClick()">
+              <i id="topnav-icon" class="ms-Icon ms-Icon--GlobalNavButton"></i>
+            </a>
+        </div>
+    </header>
+    <div class="content-body">
+        <div id="title">
+            <h1>Auto-Korrelation der Wetterdaten</h1>
+        </div>
+    </div>
+</body>
+</html>
