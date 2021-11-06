@@ -25,6 +25,11 @@
   .topnav .icon {
     display: none;
   }
+
+  .active {
+    background-color: rgba(221, 221, 221, 0.267);
+    color: white;
+  }
   
   @media screen and (max-width: 600px) {
     .topnav a:not(:first-child) {display: none;}
