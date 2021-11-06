@@ -21,6 +21,8 @@ weather_pb_df = pd.concat(dfs, ignore_index=True)
 weather_pb_df['date'] = pd.to_datetime(weather_pb_df.date, format='%Y/%m/%d')
 weather_pb_df = weather_pb_df[['date', 'tavg']].set_index(['date'])
 
+print(weather_pb_df.head())
+
 tsaplots.plot_acf(weather_pb_df)
 
 plt.show()
