@@ -1,43 +1,71 @@
 import os
 import datetime
-from numpy.random.mtrand import shuffle
 
-from pandas.core.algorithms import mode
-
+import IPython
+import IPython.display
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import tensorflow as tf
+import glob
+import time
+import math
 
-mpl.rcParams['figure.figsize'] = (8, 6)
-mpl.rcParams['axes.grid'] = False
+from sklearn.model_selection import train_test_split
 
-df = pd.read_csv('./data/timestamp.CSV', usecols=[0,1], sep=";")
+IPython.display.clear_output()
 
-df['date'] = pd.to_numeric(df['date'])
+path = os.path.dirname(__file__)
+filenames = glob.glob(path + "/data" + "/*.csv")
+
+dfs = []
+for filename in filenames:
+    dfs.append(pd.read_csv(filename, usecols=[0,1]))
+df = pd.concat(dfs, ignore_index=True)
+
+df['date'] = pd.to_numeric(pd.to_datetime(df['date']))
 df['tavg'] = pd.to_numeric(df['tavg'])
+df = df.sort_values(by=['date'], ascending=True)
 
-column_indices = {name: i for i, name in enumerate(df.columns)}
+df['sin'] = np.sin(df['date'] * 3600 * 24)
 
-n = len(df)
-train_df = df[0:int(n*0.7)]
-val_df = df[int(n*0.7):int(n*0.9)]
-test_df = df[int(n*0.9):]
+df['date'] = pd.to_datetime(df['date'])
+df.pop('date')
 
-model = tf.keras.Sequential()
-model.add(tf.keras.layers.Dense(1))
-model.compile(loss='mean_squared_error', metrics=['accuracy'])
-model.fit(train_df['tavg'], train_df['date'], epochs=10, batch_size=20, shuffle=False)
+train, test = train_test_split(df, test_size=0.2)
 
-pred = model.predict(test_df['tavg'])
+early_stopping = tf.keras.callbacks.EarlyStopping(
+    monitor='val_loss',
+    patience=10,
+    mode='min'
+)
+
+model = tf.keras.Sequential([
+    tf.keras.layers.Dense(32),
+    tf.keras.layers.Dense(1)
+])
+
+model.compile(
+    loss=tf.losses.MeanSquaredError(),
+    optimizer=tf.optimizers.Adam(),
+    metrics=[tf.metrics.MeanAbsoluteError()]
+)
+
+history = model.fit(
+    train['tavg'], train['sin'], epochs=100,
+    validation_data=(test['tavg'], test['sin']),
+    callbacks=[early_stopping]
+)
+
+
+pred = model.predict(df['tavg'])
+print(pred)
 
 plt.figure()
-plt.plot(test_df['date'], test_df['tavg'])
+df.pop('sin')
+plt.plot(df['tavg'])
 
 plt.figure()
-plt.plot(test_df['date'], pred)
-
-
-pred = model.predict(val_df['tavg'])
+plt.plot(pred)
