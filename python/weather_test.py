@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 import os, glob
 
 path = os.path.dirname(__file__)
-filenames = glob.glob(path + "/data" + "/*20.csv")
+filenames = glob.glob(path + "/data" + "/*.csv")
 
 def get_data(cols_array=[0,1]):
     dfs = []
@@ -31,7 +31,7 @@ tavg_df = tsatools.add_trend(ts, trend='ct')
 tavg_lm = sm.ols(formula="tavg ~ trend", data=tavg_df).fit()
 print(tavg_lm.summary())
 
-# oh wunder, ist schlecht
+#########################
 
 tavg_rmse = np.sqrt(np.mean(tavg_lm.resid)**2)
 print("rmse : ", tavg_rmse)
@@ -79,3 +79,14 @@ plt.show()
 plt.figure()
 plt.plot(pre, 'red')
 plt.show()
+
+
+###################
+
+df = get_data()
+def moving_average(x, w):
+    return np.convolve(x, np.ones(w), 'valid') / w
+
+gl_d = moving_average(df['tavg'], 366)
+plt.figure()
+plt.plot(gl_d)
