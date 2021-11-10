@@ -7,6 +7,8 @@ import statsmodels.formula.api as sm
 from statsmodels.tsa import tsatools, stattools
 from statsmodels.graphics import tsaplots
 
+# Argumente für diese Funktion Lag, Zeitspanne
+
 # get data file names
 path = os.path.dirname(__file__)
 filenames = glob.glob(path + "/data" + "/*.csv")
@@ -17,11 +19,24 @@ for filename in filenames:
 
 # Concatenate all data into one DataFrame
 weather_pb_df = pd.concat(dfs, ignore_index=True)
-# convert the date information to a datetime object
 weather_pb_df['date'] = pd.to_datetime(weather_pb_df.date, format='%Y/%m/%d')
+weather_pb_df = weather_pb_df.sort_values('date')
+
+print(weather_pb_df.head())
+print(weather_pb_df.tail())
+
+# Check if any null or NaN values in data
+print(weather_pb_df.isnull().sum())
+
+# convert the date information to a datetime object
 weather_pb_df = weather_pb_df[['date', 'tavg']].set_index(['date'])
 
-tsaplots.plot_acf(weather_pb_df)
+end = 365
+
+plt.plot(weather_pb_df['1993-01-01':'1994-01-01'])
+
+#Je mehr Lags desto weiter reicht die Zeit zurück und desto weniger hängen die Werte voneinander ab
+tsaplots.plot_acf(weather_pb_df['1993-01-01':'1994-01-01'], lags=35)
 
 plt.show()
 

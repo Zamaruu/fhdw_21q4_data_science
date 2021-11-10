@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="./css/global.css">
     <link rel="stylesheet" href="./css/navbar.css">
     <link rel="stylesheet" href="./css/content.css">
-    <script src="./js/navbar.js"></script>
     <script src="./js/chartjs/chart.min.js"></script>
     <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.min.css" />
     <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.components.min.css" />
@@ -29,6 +28,72 @@
         <div id="title">
             <h1>Auto-Korrelation der Wetterdaten</h1>
         </div>
+        <div class="ms-Grid" dir="ltr" style="margin-bottom: 25px;">
+            <div class="ms-Grid-row">
+                <div class="ms-Grid-col ms-sm6 ms-md4 ms-lg2">
+                    <div class="docs-DialogExample-default">
+                        <div class="ms-Dialog">
+                          <div class="ms-Dialog-title">Auto-Korrelation starten</div>
+                          <div class="ms-Dialog-content">
+                            <p class="ms-Dialog-subText">Um die Auto-Korrelation durchzuführen müssen Start und Enddatum sowie die Lag-Anzahl angegeben werden!</p>
+                            <div class="ms-TextField ms-TextField--underlined">
+                                <label class="ms-Label">Startdatum</label>
+                                <input class="ms-TextField-field" type="text" value="" placeholder="Format: 1993.01.01">
+                            </div>
+                            <div class="ms-TextField ms-TextField--underlined">
+                                <label class="ms-Label">Enddatum</label>
+                                <input class="ms-TextField-field" type="text" value="" placeholder="  Format: 1999.01.01">
+                            </div>
+                          </div>
+                          <div class="ms-Dialog-actions">
+                            <button onclick="startIndexScript()"  class="ms-Button ms-Dialog-action ms-Button--primary">
+                              <span class="ms-Button-label">Start</span> 
+                            </button>
+                            <button class="ms-Button ms-Dialog-action">
+                              <span class="ms-Button-label">Abbrechen</span> 
+                            </button>
+                          </div>
+                        </div>
+                        <button class="ms-Button ms-Button--primary docs-DialogExample-button">
+                            <span class="ms-Button-label">AKF Starten</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="ms-Grid-col ms-sm6 ms-md4 ms-lg2">
+                    <div class="ms-PanelExample">
+                        <button id="detailPanel" class="ms-Button" disabled>
+                          <span class="ms-Button-label">Analysedetails</span> 
+                        </button>
+                        <div class="ms-Panel ms-Panel--lg">
+                          <button class="ms-Panel-closeButton ms-PanelAction-close">
+                            <i class="ms-Panel-closeIcon ms-Icon ms-Icon--Cancel"></i>
+                          </button>
+                          <div class="ms-Panel-contentInner">
+                            <p class="ms-Panel-headerText">Details der Analyse</p>
+                            <div class="ms-Panel-content">
+                              <span class="ms-font-m">Laufzeit, usw...</span> 
+                            </div>
+                          </div>
+                        </div>
+                    </div>
+                </div>      
+            </div>
+        </div>
+        <div class="chart-container">
+            <div id="chart-loading-spinner" style="display: none;">
+                <div class="lds-roller" id="spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+            </div>
+            <canvas id="lrChart" style="display: none;"></canvas>
+        </div>
     </div>
 </body>
+<script>
+    function myFunction() {
+      alert("TODO - Pythonskript schreiben");
+    }
+</script>
+<script src="./js/index.js"></script>
+<script src="./js/navbar.js"></script>
+<script src="./js/initFabricCore.js"></script>
+<script src="./js/sampleChart.js"></script>
 </html>
