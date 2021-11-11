@@ -87,13 +87,6 @@ def plot_tavg(x, y):
 normalizer = tf.keras.layers.Normalization(axis=-1)
 normalizer.adapt(np.array(train_features))
 
-first = np.array(train_features[:1])
-
-with np.printoptions(precision=2, suppress=True):
-    print('First example:', first)
-    print()
-    print('Normalized:', normalizer(first).numpy())
-
 # Lin Reg 1 Var
 tavg = np.array(train_features['date'])
 
@@ -191,7 +184,8 @@ test_results['dnn_date_model'] = dnn_date_model.evaluate(
 
 
 ## DNN multiple
-
+print("ft", train_features)
+print("labels", train_labels)
 dnn_model = build_and_compile_model(normalizer)
 history = dnn_model.fit(
     train_features,
@@ -204,7 +198,7 @@ test_results['dnn_model'] = dnn_model.evaluate(test_features, test_labels, verbo
 
 # Perfofmance
 print(pd.DataFrame(test_results, index=['error']).T)
-test_predictions = dnn_model.predict(test_features).flatten()
+test_predictions = dnn_model.predict(test_features)
 
 plt.figure()
-plt.plot(test_predictions[366:])
+plt.plot(test_predictions[10:])
