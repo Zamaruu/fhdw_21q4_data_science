@@ -14,22 +14,21 @@ import glob
 IPython.display.clear_output()
 
 path = os.path.dirname(__file__)
-filenames = glob.glob(path + "/data" + "/jahr.csv")
+filenames = glob.glob(path + "/data" + "/export*.csv")
 
 dfs = []
 for filename in filenames:
-    dfs.append(pd.read_csv(filename, usecols=[0, 1], sep=";"))
+    dfs.append(pd.read_csv(filename, usecols=[0,1,9]))
 df = pd.concat(dfs, ignore_index=True)
 
-# df['date'] = pd.to_numeric(pd.to_datetime(df['date']))
-# df['sin'] = np.sin(df['date'] / 1e9 / 3600 / 60 / 24)
-# df['date'] = df['date'] / 1e16
+df['date'] = pd.to_numeric(pd.to_datetime(df['date']))
+df['sin'] = np.sin(df['date'] / 1e9 / 3600 / 60 / 24)
+df['date'] = df['date'] / 1e16
 
-# df['tavg'] = pd.to_numeric(df['tavg'])
-# df['tsun'] = pd.to_numeric(df['tsun'])
+df['tavg'] = pd.to_numeric(df['tavg'])
 
-# df = df.fillna(0)
-# df = df.sort_values(by=['date'], ascending=True)
+df = df.fillna(0)
+df = df.sort_values(by=['date'], ascending=True)
 print(df.head())
 
 n = len(df)
@@ -51,10 +50,10 @@ history = model.compile(
 
 dataset = train.copy()
 
-train_x = dataset['date']
+train_x = dataset[['date', 'pres']]
 train_y = dataset['tavg']
 
-model.fit(train_x, train_y, epochs=100, validation_split=0.2, verbose=0)
+model.fit(train_x, train_y, epochs=100, validation_split=0.2)
 
 pred = model.predict(test['date'])
 

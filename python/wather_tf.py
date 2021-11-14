@@ -10,16 +10,18 @@ from tensorflow.keras import layers
 import os
 import glob
 
-# make nunpy outputs easier to read
+from tensorflow.python.eager.monitoring import Metric
+
+#make nunpy outputs easier to read
 np.set_printoptions(precision=3, suppress=True)
 
 print("TF Version: ", tf.__version__)
 divider = 10000000000000000
 
 
-def get_data(cols_array=[0, 1]):
+def get_data(cols_array):
     path = os.path.dirname(__file__)
-    filenames = glob.glob(path + "/data" + "/*.csv")
+    filenames = glob.glob(path + "/data" + "/export*20.csv")
 
     dfs = []
     for filename in filenames:
@@ -29,28 +31,32 @@ def get_data(cols_array=[0, 1]):
     return df
 
 
-df = get_data([0, 1, 9])
+df = get_data([0, 1, 4, 5, 6, 7, 8, 9])
 
-df['date'] = pd.to_numeric(pd.to_datetime(df['date']))
-df['date'] = df['date'] / divider
+df['date'] = pd.to_datetime(df['date'])
 df = df.sort_values('date')
+df['date'] = pd.to_numeric(df['date'])
+df['date'] = df['date'] / divider
 df['tavg'] = pd.to_numeric(df['tavg'])
 
-# clean data ( remove NA)
+#clean data ( remove NA)
 df.isna().sum()
-df = df.dropna()
 
-# split to train and test
-train_dataset = df.sample(frac=0.8, random_state=0)
-test_dataset = df.drop(train_dataset.index)
+for col in df:
+    df[col] = df[col].fillna(0)
 
-# see how data belongs together
-# sns.pairplot(train_dataset[['date', 'tavg', 'pres']])
+#split to train and test
+n = len(df)
+train_dataset = df[0:int(n*0.9)]
+test_dataset = df[int(n*0.9):]
 
-# describe data
-train_dataset.describe().transpose()
+#see how data belongs together
+sns.pairplot(train_dataset[['date', 'tavg', 'pres']])
 
-# split label and data
+#describe data
+print(train_dataset.describe().transpose())
+
+#split label and data
 train_features = train_dataset.copy()
 test_features = test_dataset.copy()
 
@@ -61,8 +67,8 @@ date_min = np.amin(train_features['date'])
 date_max = np.amax(train_features['date'])
 date_dif = date_max - date_min
 
-# build keras
-#
+#build keras
+
 
 def plot_loss(history):
     plt.figure()
@@ -154,14 +160,14 @@ test_results['linear_model'] = linear_model.evaluate(
 def build_and_compile_model(norm):
     model = keras.Sequential([
         norm,
-        layers.Dense(64, activation='relu'),
-        layers.Dense(64, activation='relu'),
+        layers.Dense(4, activation='relu'),
         layers.Dense(1)
     ])
 
     model.compile(
-        loss="mean_absolute_error",
-        optimizer=tf.keras.optimizers.Adam(0.001)
+        loss=tf.keras.losses.MeanSquaredLogarithmicError(),
+        optimizer=tf.keras.optimizers.Adam(0.001),
+        metrics=tf.keras.metrics.MeanSquaredLogarithmicError()
     )
     return model
 
@@ -180,12 +186,11 @@ y = dnn_date_model.predict(x)
 
 test_results['dnn_date_model'] = dnn_date_model.evaluate(
     test_features['date'], test_labels,
-    verbose=0)
+    verbose=0
+)
 
 
-## DNN multiple
-print("ft", train_features)
-print("labels", train_labels)
+# DNN multiple
 dnn_model = build_and_compile_model(normalizer)
 history = dnn_model.fit(
     train_features,
@@ -196,9 +201,17 @@ history = dnn_model.fit(
 )
 test_results['dnn_model'] = dnn_model.evaluate(test_features, test_labels, verbose=0)
 
-# Perfofmance
-print(pd.DataFrame(test_results, index=['error']).T)
+#Perfofmance
+# print(pd.DataFrame(test_results, index=['error']).T)
 test_predictions = dnn_model.predict(test_features)
 
 plt.figure()
-plt.plot(test_predictions[10:])
+plt.plot(test_labels.values, "green")
+plt.plot(test_predictions, "red")
+
+# vergleich training
+train_predictions = dnn_model.predict(train_features)
+
+plt.figure()
+plt.plot(train_labels.values, "green")
+plt.plot(train_predictions, "red")
