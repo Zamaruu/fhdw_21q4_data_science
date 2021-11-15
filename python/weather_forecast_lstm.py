@@ -2,195 +2,146 @@ import os
 import glob
 import numpy as np
 import pandas as pd
+from scipy.sparse import data
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
 from keras.layers import LSTM,Dense ,Dropout, Bidirectional
+from numpy import array
+from tensorflow.python.ops.gen_array_ops import reshape
 
-#Zeitserienforecast mit LSTM Neural-Netzwerk
 
-#Methoden
-def normalize(data, train_split):
-    data_mean = data[:train_split].mean(axis=0)
-    data_std = data[:train_split].std(axis=0)
-    return (data - data_mean) / data_std
+def data_split(sequence, n_timestamp):
+    X = []
+    y = []
+    for i in range(len(sequence)):
+        end_ix = i + n_timestamp
+        if end_ix > len(sequence)-1:
+            break
+        # i to end_ix as input
+        # end_ix as target output
+        seq_x, seq_y = sequence[i:end_ix], sequence[end_ix]
+        X.append(seq_x)
+        y.append(seq_y)
+    return array(X), array(y)
 
-def windowed_dataset(series, window_size, batch_size, shuffle_buffer):
- series = tf.expand_dims(series, axis=-1)
- ds = tf.data.Dataset.from_tensor_slices(series)
- ds = ds.window(window_size + 1, shift=1, drop_remainder=True)
- ds = ds.flat_map(lambda w: w.batch(window_size + 1))
- ds = ds.shuffle(shuffle_buffer)
- ds = ds.map(lambda w: (w[:-1], w[1:]))
- return ds.batch(batch_size).prefetch(1)
-
-def model_forecast(model, series, window_size):
- ds = tf.data.Dataset.from_tensor_slices(series)
- ds = ds.window(window_size, shift=1, drop_remainder=True)
- ds = ds.flat_map(lambda w: w.batch(window_size))
- ds = ds.batch(32).prefetch(1)
- forecast = model.predict(ds)
- return forecast
-
-def plot_series(time, series, format="-", start=0, end=None):
-    plt.plot(time[start:end], series[start:end], format)
-    plt.xlabel("Time")
-    plt.ylabel("Value")
-    plt.grid(True)
-
-#Main-Programm
-
-# get data file names
+# ------------------------------------------------------------
+# Daten einlesen
+# Trainingsdaten
 path = os.path.dirname(__file__)
 filenames = glob.glob(path + "/data" + "/*19.csv")
 
 dfs = []
 for filename in filenames:
+    print(filename)
     dfs.append(pd.read_csv(filename, usecols=["date", "tavg"]))
 
 # Concatenate all data into one DataFrame
 weather_pb_df = pd.concat(dfs, ignore_index=True)
+weather_pb_df['date'] = pd.to_datetime(weather_pb_df['date'])
+weather_pb_df = weather_pb_df.sort_values(by=['date'], ascending=True)
 print(weather_pb_df.head())
+print(weather_pb_df.tail())
 
-series = np.array(weather_pb_df["tavg"])
-time = np.array(weather_pb_df["date"])
+# Predictiondaten
+testfile = glob.glob(path + "/data" + "/*20.csv")
+pred_pb_df = pd.read_csv(testfile[0], usecols=["date", "tavg"])
+pred_pb_df['date'] = pd.to_datetime(pred_pb_df['date'])
+pred_pb_df = pred_pb_df.sort_values(by=['date'], ascending=True)
+print(pred_pb_df.head())
+# ---------------------------------------------------------------
+# Daten für Model vorbereiten
 
-plt.plot(time, series)
-plt.show()
-
-size = len(series)
-split_time = int(size * 0.66)
-
-time_train = time[:split_time]
-time_valid = time[split_time:]
-
-temp_train = series[:split_time]
-temp_valid = series[split_time:]
-
-tf.keras.backend.clear_session()
-tf.random.set_seed(51)
-np.random.seed(51)
-shuffle_buffer_size = 1000
-window_size = 64
-batch_size = 256
-train_set = windowed_dataset(temp_train, window_size, batch_size, shuffle_buffer_size)
-print(temp_train.shape)
-
-# Creating Model
-tf.keras.backend.clear_session()
-model = tf.keras.models.Sequential([
- tf.keras.layers.Conv1D(filters=60, kernel_size=5,
- strides=1, padding="causal",
- activation="relu",
- input_shape=[None, 1]),
- tf.keras.layers.LSTM(60, return_sequences=True),
- tf.keras.layers.LSTM(60, return_sequences=True),
- tf.keras.layers.Dense(30, activation="relu"),
- tf.keras.layers.Dense(10, activation="relu"),
- tf.keras.layers.Dense(1),
- tf.keras.layers.Lambda(lambda x: x * 400)
-])
-model.summary()
-
-optimizer = tf.keras.optimizers.SGD(learning_rate=1e-5, momentum=0.9)
-model.compile(loss=tf.keras.losses.Huber(),
- optimizer=optimizer,
- metrics=["acc"])
-history = model.fit(train_set,epochs=100)
+n_timestamp = 10
+train_days = int(len(weather_pb_df) * 0.66)  # number of days to train from
+n_epochs = 25
+filter_on = 1
 
 
-# — — — — — — — — — — — — — — — — — — — — — — — — — — — — — -
-# Retrieve a list of list results on training and test data
-# sets for each training epoch
-# — — — — — — — — — — — — — — — — — — — — — — — — — — — — — -
-loss=history.history['loss']
-epochs=range(len(loss)) # Get number of epochs
-# — — — — — — — — — — — — — — — — — — — — — — — — 
-# Plot training and validation loss per epoch
-# — — — — — — — — — — — — — — — — — — — — — — — — 
-plt.plot(epochs, loss, "r")
-plt.title("Training loss")
-plt.xlabel("Epochs")
-plt.ylabel("Loss")
-plt.legend(["Loss"])
-plt.figure()
-zoomed_loss = loss[50:]
-zoomed_epochs = range(50,100)
-# — — — — — — — — — — — — — — — — — — — — — — — — 
-# Plot training and validation loss per epoch
-# — — — — — — — — — — — — — — — — — — — — — — — — 
-plt.plot(zoomed_epochs, zoomed_loss, "r")
-plt.title("Training loss")
-plt.xlabel("Epochs")
-plt.ylabel("Loss")
-plt.legend(["Loss"])
-plt.figure()
 
+train_set = weather_pb_df[0:train_days].reset_index(drop=True)
+test_set = weather_pb_df[train_days:].reset_index(drop=True)
+pred_set = pred_pb_df[:].reset_index(drop=True)
+training_set = train_set.iloc[:, 1:2].values
+testing_set = test_set.iloc[:, 1:2].values
+prediction_set = pred_set.iloc[:, 1:2].values
 
-rnn_forecast = model_forecast(model, series[..., np.newaxis], window_size)
-rnn_forecast = rnn_forecast[split_time - window_size:-1, -1, 0]
+print(training_set)
+print(testing_set)
+print(prediction_set)
+# ------------------------------------------------------------------
+# Daten Normalisiern
+
+sc = MinMaxScaler(feature_range = (0, 1))
+training_set_scaled = sc.fit_transform(training_set)
+testing_set_scaled = sc.fit_transform(testing_set)
+prediction_set_scaled = sc.fit_transform(prediction_set)
+
+X_train, y_train = data_split(training_set_scaled, n_timestamp)
+X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
+
+X_test, y_test = data_split(testing_set_scaled, n_timestamp)
+X_test = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
+
+X_pred, y_predi = data_split(prediction_set_scaled, n_timestamp)
+X_pred = X_pred.reshape(X_pred.shape[0], X_pred.shape[1], 1)
+
+# ------------------------------------------------------------------
+# Stacked LSTM
+model = Sequential()
+model.add(LSTM(50, activation='relu', return_sequences=True, input_shape=(X_train.shape[1], 1)))
+model.add(LSTM(50, activation='relu'))
+model.add(Dense(1))
+print(model.summary())
+
+#
+# Start training
+#
+model.compile(optimizer = 'adam', loss = 'mean_squared_error')
+history = model.fit(X_train, y_train, epochs = n_epochs, batch_size = 32)
+loss = history.history['loss']
+epochs = range(len(loss))
+print(history)
+
+# ------------------------------------------------------------------
+# Prediction
+# y_predicted = model.predict(array(weather_pb_df["tavg"]))
+y_predicted = model.predict(X_pred)
+
+#
+# 'De-normalize' the data
+#
+y_predicted_descaled = sc.inverse_transform(y_predicted)
+y_train_descaled = sc.inverse_transform(y_train)
+y_test_descaled = sc.inverse_transform(y_test)
+y_pred = y_predicted.ravel()
+y_pred = [round(yx, 2) for yx in y_pred]
+y_tested = y_test.ravel()
+
+# ------------------------------------------------------------------
+# Plotten
 plt.figure(figsize=(10, 6))
-plot_series(time_valid, temp_valid)
-plot_series(time_valid, rnn_forecast)
 
-#weather_pb_df = weather_pb_df[["date", "tavg"]].set_index("date")
-# print(weather_pb_df.head())
-# -----------------------------------------------
-# training_set = weather_pb_df.iloc[:,1:2].values
-
-# # print(training_set)
-
-# sc = MinMaxScaler(feature_range=(0,1))
-# training_set_scaled = sc.fit_transform(training_set)
-
-# print(training_set_scaled)
-
-# x_train = []
-# y_train = []
-# n_future = 4 # next 4 days temperature forecast
-# n_past = 30 # Past 30 days 
-# for i in range(0,len(training_set_scaled)-n_past-n_future+1):
-#     x_train.append(training_set_scaled[i : i + n_past , 0])     
-#     y_train.append(training_set_scaled[i + n_past : i + n_past + n_future , 0 ])
-
-# x_train , y_train = np.array(x_train), np.array(y_train)
-# x_train = np.reshape(x_train, (x_train.shape[0] , x_train.shape[1], 1) )
+plt.subplot(3, 1, 1)
+plt.plot(weather_pb_df['tavg'], color = 'black', linewidth=1, label = 'True value')
+plt.ylabel("Temperature")
+plt.xlabel("Day")
+plt.title("All data")
 
 
-# regressor = Sequential()
-# regressor.add(Bidirectional(LSTM(units=30, return_sequences=True, input_shape = (x_train.shape[1],1) ) ))
-# regressor.add(Dropout(0.2))
-# regressor.add(LSTM(units= 30 , return_sequences=True))
-# regressor.add(Dropout(0.2))
-# regressor.add(LSTM(units= 30 , return_sequences=True))
-# regressor.add(Dropout(0.2))
-# regressor.add(LSTM(units= 30))
-# regressor.add(Dropout(0.2))
-# regressor.add(Dense(units = n_future,activation='sigmoid'))
-# regressor.compile(optimizer='adam', loss='mean_squared_error',metrics=['acc'])
-# regressor.fit(x_train, y_train, epochs=20,batch_size=32 )
+plt.subplot(3, 2, 3)
+plt.plot(pred_pb_df["tavg"], color = 'black', linewidth=1, label = 'True value')
+plt.plot(y_predicted_descaled, color = 'red',  linewidth=1, label = 'Predicted')
+plt.legend(frameon=False)
+plt.ylabel("Temperature")
+plt.xlabel("Day")
+plt.title("Predicted data (n days)")
 
-
-# # read test dataset
-# filename = glob.glob(path + "/data" + "/*20.csv")
-# print(filename)
-# testdataset = pd.read_csv(filename[0])
-# #get only the temperature column
-# testdataset = testdataset.iloc[:30,1:2].values
-
-# real_temperature = pd.read_csv(filename[0])
-# real_temperature = real_temperature.iloc[30:,1:2].values
-
-# testing = sc.transform(testdataset)
-# testing = np.array(testing)
-# testing = np.reshape(testing,(testing.shape[1],testing.shape[0],1))
-
-# predicted_temperature = regressor.predict("")
-# predicted_temperature = sc.inverse_transform(predicted_temperature)
-# predicted_temperature = np.reshape(predicted_temperature,(predicted_temperature.shape[1],predicted_temperature.shape[0]))
-
-# plt.plot(real_temperature)
-# plt.plot(predicted_temperature)
-# plt.show()
-#-----------------------------------
+plt.subplot(3, 2, 4)
+plt.plot(pred_pb_df["tavg"][0:75], color = 'black', linewidth=1, label = 'True value')
+plt.plot(y_predicted_descaled[0:75], color = 'red', label = 'Predicted')
+plt.legend(frameon=False)
+plt.ylabel("Temperature")
+plt.xlabel("Day")
+plt.title("Predicted data (first 75 days)")
