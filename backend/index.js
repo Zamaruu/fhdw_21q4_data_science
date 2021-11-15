@@ -22,6 +22,7 @@ for (var idx in apis) {
     console.log("listen to path 'localhost:" + port + "/" + name + "'.")
     app.post("/" + name, async (req, res) => {
         try {
+            console.log("Starting")
             await makeFile(req.body['dates'])
             await startPython(name)
             var response = await readPythonOutput()
@@ -46,8 +47,10 @@ var returnError = function (res, error) {
  */
 var makeFile = function (content) {
     return new Promise((resolve, reject) => {
+        console.log("dates: " + content)
         fs.writeFile('import.csv', content, (e) => {
             if (e) {
+                console.log("error " + e)
                 reject(e)
                 return
             }
@@ -62,8 +65,10 @@ var makeFile = function (content) {
  */
 var startPython = function (name) {
     return new Promise((resolve, reject) => {
+        console.log("starting " + name + ".py")
         PythonShell.run('../python/weather_' + name + '.py', null, (e) => {
             if (e) {
+                console.log("error " + e)
                 reject(e)
                 return
             }
@@ -79,6 +84,7 @@ var readPythonOutput = function () {
     return new Promise((resolve, reject) => {
         fs.readFile('output.csv', "utf8", (e, data) => {
             if (e) {
+                console.log("error " + e)
                 reject(e)
                 return
             }

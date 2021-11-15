@@ -1,3 +1,4 @@
 backend/node_modules
 backend/output.csv
+backend/import.csv
 python/__pycache__
