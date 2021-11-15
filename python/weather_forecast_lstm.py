@@ -10,7 +10,7 @@ from keras.models import Sequential
 from keras.layers import LSTM,Dense ,Dropout, Bidirectional
 from numpy import array
 from tensorflow.python.ops.gen_array_ops import reshape
-
+from weather_api import saveDFtoCSV
 
 def data_split(sequence, n_timestamp):
     X = []
@@ -145,3 +145,11 @@ plt.legend(frameon=False)
 plt.ylabel("Temperature")
 plt.xlabel("Day")
 plt.title("Predicted data (first 75 days)")
+
+# Prediction zurück an API geben
+pred_out_df = pd.DataFrame(data=y_predicted_descaled, columns=["pred_tavg"])
+pred_out_df["real_tavg"] = pred_pb_df['tavg']
+pred_out_df = pred_out_df.reset_index()
+
+print(pred_out_df)
+saveDFtoCSV(pred_out_df)
