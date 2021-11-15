@@ -23,11 +23,11 @@ for (var idx in apis) {
     app.post("/" + name, async (req, res) => {
         try {
             await makeFile(req.body['dates'])
-            await startPython(name)
+            await startPython(req.path.replace("/", ""))
             var response = await readPythonOutput()
             res.json({ 0: response })
         } catch (e) {
-            returnError
+            returnError(res, e)
         }
 
     })
@@ -60,7 +60,7 @@ var makeFile = function (content) {
  * @description Starts Python file by name
  * @param {String} name 
  */
-var startPython = function (name) {
+var startPython = function () {
     return new Promise((resolve, reject) => {
         PythonShell.run('../python/weather_' + name + '.py', null, (e) => {
             if (e) {
