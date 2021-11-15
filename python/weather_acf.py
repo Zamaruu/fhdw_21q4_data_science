@@ -3,8 +3,6 @@ import glob
 import numpy as np
 import pandas as pd
 import matplotlib.pylab as plt
-import statsmodels.formula.api as sm
-from statsmodels.tsa import tsatools, stattools
 from statsmodels.graphics import tsaplots
 
 # Argumente für diese Funktion Lag, Zeitspanne
