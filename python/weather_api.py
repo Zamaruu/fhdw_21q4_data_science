@@ -12,7 +12,7 @@ def saveDFtoCSV(df: DataFrame):
     df.to_json(getSavePath() + 'output.json')
 
 def removeOutputFile():
-    if os.path.exists(getSavePath() + "output.csv"):
-        os.remove(getSavePath() + "output.csv")
+    if os.path.exists(getSavePath() + "output.json"):
+        os.remove(getSavePath() + "output.json")
     else:
         print("The file does not exist")
