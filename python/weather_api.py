@@ -8,4 +8,11 @@ def getSavePath():
     return save_path
 
 def saveDFtoCSV(df: DataFrame):
+    removeOutputFile()
     df.to_csv(getSavePath() + 'output.csv', index=False,)
+
+def removeOutputFile():
+    if os.path.exists(getSavePath() + "output.csv"):
+        os.remove(getSavePath() + "output.csv")
+    else:
+        print("The file does not exist")

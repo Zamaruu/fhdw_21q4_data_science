@@ -10,7 +10,7 @@ from keras.models import Sequential
 from keras.layers import LSTM,Dense ,Dropout, Bidirectional
 from numpy import array
 from tensorflow.python.ops.gen_array_ops import reshape
-from weather_api import saveDFtoCSV
+from weather_api import saveDFtoCSV, removeOutputFile
 
 def data_split(sequence, n_timestamp):
     X = []
@@ -27,8 +27,10 @@ def data_split(sequence, n_timestamp):
     return array(X), array(y)
 
 # ------------------------------------------------------------
+
 # Daten einlesen
 # Trainingsdaten
+
 path = os.path.dirname(__file__)
 filenames = glob.glob(path + "/data" + "/*19.csv")
 
