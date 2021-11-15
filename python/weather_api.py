@@ -9,7 +9,7 @@ def getSavePath():
 
 def saveDFtoCSV(df: DataFrame):
     removeOutputFile()
-    df.to_csv(getSavePath() + 'output.csv', index=False,)
+    df.to_json(getSavePath() + 'output.json')
 
 def removeOutputFile():
     if os.path.exists(getSavePath() + "output.csv"):

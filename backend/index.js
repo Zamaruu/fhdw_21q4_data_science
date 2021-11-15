@@ -26,7 +26,7 @@ for (var idx in apis) {
             await makeFile(req.body['dates'])
             await startPython(req.path.replace("/", ""))
             var response = await readPythonOutput()
-            res.json({ 0: response })
+            res.json(JSON.parse(response))
         } catch (e) {
             returnError(res, e)
         }
@@ -47,7 +47,6 @@ var returnError = function (res, error) {
  */
 var makeFile = function (content) {
     return new Promise((resolve, reject) => {
-        console.log("dates: " + content)
         fs.writeFile('import.csv', content, (e) => {
             if (e) {
                 console.log("error " + e)
@@ -63,7 +62,7 @@ var makeFile = function (content) {
  * @description Starts Python file by name
  * @param {String} name 
  */
-var startPython = function () {
+var startPython = function (name) {
     return new Promise((resolve, reject) => {
         console.log("starting " + name + ".py")
         PythonShell.run('../python/weather_' + name + '.py', null, (e) => {
@@ -82,7 +81,7 @@ var startPython = function () {
  */
 var readPythonOutput = function () {
     return new Promise((resolve, reject) => {
-        fs.readFile('output.csv', "utf8", (e, data) => {
+        fs.readFile('output.json', "utf8", (e, data) => {
             if (e) {
                 console.log("error " + e)
                 reject(e)
