@@ -3,3 +3,5 @@ backend/output.csv
 backend/output.json
 backend/import.csv
 python/__pycache__
+Pipfile
+Pipfile.lock
