@@ -12,6 +12,8 @@ import glob
 
 from tensorflow.python.eager.monitoring import Metric
 
+from weather_api import saveDFtoCSV, removeOutputFile
+
 #make nunpy outputs easier to read
 np.set_printoptions(precision=3, suppress=True)
 
@@ -31,7 +33,7 @@ def get_data(cols_array):
     return df
 
 
-df = get_data([0, 1, 4, 5, 6, 7, 8, 9])
+df = get_data([0, 1])
 
 df['date'] = pd.to_datetime(df['date'])
 df = df.sort_values('date')
@@ -51,10 +53,10 @@ train_dataset = df[0:int(n*0.9)]
 test_dataset = df[int(n*0.9):]
 
 #see how data belongs together
-sns.pairplot(train_dataset[['date', 'tavg', 'pres']])
+sns.pairplot(train_dataset)
 
 #describe data
-print(train_dataset.describe().transpose())
+# print(train_dataset.describe().transpose())
 
 #split label and data
 train_features = train_dataset.copy()
@@ -96,71 +98,72 @@ normalizer.adapt(np.array(train_features))
 # Lin Reg 1 Var
 tavg = np.array(train_features['date'])
 
-tavg_normalizer = layers.Normalization(input_shape=[1, ], axis=None)
+tavg_normalizer = layers.Normalization(axis=None)
 tavg_normalizer.adapt(tavg)
 
-tavg_date = tf.keras.Sequential([
-    tavg_normalizer,
-    layers.Dense(1)
-])
+# tavg_date = tf.keras.Sequential([
+#     tavg_normalizer,
+#     layers.Dense(1)
+# ])
 
-tavg_date.compile(
-    optimizer=tf.optimizers.Adam(0.1),
-    loss="mse"
-)
+# tavg_date.compile(
+#     optimizer=tf.optimizers.Adam(0.1),
+#     loss="mse"
+# )
 
-history = tavg_date.fit(
-    train_features['date'],
-    train_labels,
-    epochs=100,
-    verbose=0,
-    validation_split=0.2
-)
+# history = tavg_date.fit(
+#     train_features['date'],
+#     train_labels,
+#     epochs=100,
+#     verbose=0,
+#     validation_split=0.2
+# )
 
-hist = pd.DataFrame(history.history)
-hist['epoch'] = history.epoch
-hist.tail()
+# hist = pd.DataFrame(history.history)
+# hist['epoch'] = history.epoch
+# hist.tail()
 
 test_results = {}
-test_results['date_model'] = tavg_date.evaluate(
-    test_features['date'],
-    test_labels,
-    verbose=0
-)
+# test_results['date_model'] = tavg_date.evaluate(
+#     test_features['date'],
+#     test_labels,
+#     verbose=0
+# )
 
-x = tf.linspace(date_min, date_max, date_dif)
-y = tavg_date.predict(x)
+# x = tf.linspace(date_min, date_max, date_dif)
+# y = tavg_date.predict(x)
 
 
-# Multiple Input
-linear_model = tf.keras.Sequential([
-    normalizer,
-    layers.Dense(1)
-])
+# # Multiple Input
+# linear_model = tf.keras.Sequential([
+#     normalizer,
+#     layers.Dense(1)
+# ])
 
-linear_model.compile(
-    optimizer=tf.optimizers.Adam(learning_rate=0.1),
-    loss='mse'
-)
+# linear_model.compile(
+#     optimizer=tf.optimizers.Adam(learning_rate=0.1),
+#     loss='mse'
+# )
 
-history = linear_model.fit(
-    train_features,
-    train_labels,
-    epochs=100,
-    verbose=0,
-    validation_split=0.2
-)
-test_results['linear_model'] = linear_model.evaluate(
-    test_features['date'], test_labels, verbose=0
-)
+# history = linear_model.fit(
+#     train_features,
+#     train_labels,
+#     epochs=100,
+#     verbose=0,
+#     validation_split=0.2
+# )
+# test_results['linear_model'] = linear_model.evaluate(
+#     test_features['date'], test_labels, verbose=0
+# )
 
 # DNN single input
 
 
 def build_and_compile_model(norm):
     model = keras.Sequential([
+        tf.keras.layers.InputLayer(input_shape=(1)),
         norm,
-        layers.Dense(4, activation='relu'),
+        layers.Dense(128, activation='relu'),
         layers.Dense(1)
     ])
 
@@ -172,22 +175,22 @@ def build_and_compile_model(norm):
     return model
 
 
-dnn_date_model = build_and_compile_model(tavg_normalizer)
-history = dnn_date_model.fit(
-    train_features['date'],
-    train_labels,
-    validation_split=0.2,
-    epochs=100,
-    verbose=0
-)
+# dnn_date_model = build_and_compile_model(tavg_normalizer)
+# history = dnn_date_model.fit(
+#     train_features['date'],
+#     train_labels,
+#     validation_split=0.2,
+#     epochs=100,
+#     verbose=0
+# )
 
-x = tf.linspace(date_min, date_max, date_dif)
-y = dnn_date_model.predict(x)
+# x = tf.linspace(date_min, date_max, date_dif)
+# y = dnn_date_model.predict(x)
 
-test_results['dnn_date_model'] = dnn_date_model.evaluate(
-    test_features['date'], test_labels,
-    verbose=0
-)
+# test_results['dnn_date_model'] = dnn_date_model.evaluate(
+#     test_features['date'], test_labels,
+#     verbose=0
+# )
 
 
 # DNN multiple
@@ -196,25 +199,37 @@ history = dnn_model.fit(
     train_features,
     train_labels,
     validation_split=0.2,
-    epochs=100,
+    epochs=250,
     verbose=0
 )
 test_results['dnn_model'] = dnn_model.evaluate(test_features, test_labels, verbose=0)
 
 #Perfofmance
 # print(pd.DataFrame(test_results, index=['error']).T)
-# test_predictions = dnn_model.predict(test_features)
 
-# plt.figure()
-# plt.plot(test_labels.values, "green")
-# plt.plot(test_predictions, "red")
+print(test_features.head())
+test_predictions = dnn_model.predict(test_features)
 
-# # vergleich training
-# train_predictions = dnn_model.predict(train_features)
+plt.figure()
+plt.plot(test_labels.values, "green")
+plt.plot(test_predictions, "red")
+
+# vergleich training
+# train_predictions = dnn_model.predict(train_features.values)
 
 # plt.figure()
 # plt.plot(train_labels.values, "green")
 # plt.plot(train_predictions, "red")
 
 
-df = pd.read_csv('../backend/import.csv')
+df = pd.read_csv('../backend/import.csv', header=None)
+df[0] = pd.to_datetime(df[0])
+
+df = df.sort_values(0)
+
+df[0] = pd.to_numeric(df[0]) / divider
+print(df.head())
+
+predict = dnn_model.predict(df)
+
+saveDFtoCSV(pd.DataFrame(data=predict))
