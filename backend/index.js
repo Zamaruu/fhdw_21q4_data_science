@@ -6,7 +6,7 @@ app.use(express.json())
 var fs = require('fs')
 var { PythonShell } = require('python-shell')
 
-var apis = ["lstm", "tf", "acf", "test"];
+var apis = ["lstm", "tf", "acf", "gld", "test"];
 
 app.get('/', (req, res) => {
     var string = "Apis können aufgerufen werden durch: url:3000/[name]\n\n";
