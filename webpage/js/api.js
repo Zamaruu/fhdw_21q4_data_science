@@ -47,11 +47,12 @@ async function weather_lstm() {
             });
             set_loading(false)
             console.log(response.status)
-            console.log(response.body)
             const data = await response.json()
             console.log(data); // parses JSON response into native JavaScript objects
             set_loading(false)
             lstm_forecast_chart(data["past_date"], data["past_tavg"], data["forecast_dates"], data["forecast_tavg"]);
+            loss_chart(data["loss_history"])
+            mae_chart(data["mae_history"])
         } catch (error) {
             set_loading(false)
             console.log(error)
@@ -63,6 +64,42 @@ async function weather_lstm() {
 
 }
 
+
+function mae_chart(mae){
+    const ctx = document.getElementById('maeChart');
+    const myChart = new Chart(ctx, {
+        data: {
+            labels: Array.from(Array(mae.length).keys()),
+            datasets: [
+                {
+                    type: 'line',
+                    label: 'MAE',
+                    data: mae,
+                    borderColor: 'rgb(18, 199, 84)',
+                    tension: 0.1
+                },
+        ],
+        },
+    });
+}
+
+function loss_chart(loss){
+    const ctx = document.getElementById('lossChart');
+    const myChart = new Chart(ctx, {
+        data: {
+            labels: Array.from(Array(loss.length).keys()),
+            datasets: [
+                {
+                    type: 'line',
+                    label: 'LOSS',
+                    data: loss,
+                    borderColor: 'rgb(120, 18, 199)',
+                    tension: 0.1
+                },
+        ],
+        },
+    });
+}
 
 // Chart Functions
 function lstm_forecast_chart(old_dates, old_tavg, forecast_dates, forecast_tavg) {
@@ -91,12 +128,5 @@ function lstm_forecast_chart(old_dates, old_tavg, forecast_dates, forecast_tavg)
                 },
         ],
         },
-        // options: {
-        //     scales: {
-        //         y: {
-        //             beginAtZero: true
-        //         }
-        //     }
-        // }
     });
 }

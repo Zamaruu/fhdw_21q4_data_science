@@ -25,11 +25,11 @@ for (var idx in apis) {
     console.log("listen to path 'localhost:" + port + "/" + name + "'.")
     app.post("/" + name, async (req, res) => {
         try {
-            console.log("Starting with")
+            console.log("Starting...")
             const data = req.body;
             await makeFile(data)
             await startPython(req.path.replace("/", ""))
-            var response = await readPythonOutput()
+            var response = await readPythonOutput("output.json")
             res.json(JSON.parse(response))
         } catch (e) {
             returnError(res, e)
@@ -85,9 +85,9 @@ var startPython = function (name) {
 /**
  * @description returns Output from Python (per file)
  */
-var readPythonOutput = function () {
+var readPythonOutput = function (name) {
     return new Promise((resolve, reject) => {
-        fs.readFile('output.json', "utf8", (e, data) => {
+        fs.readFile(name, "utf8", (e, data) => {
             if (e) {
                 console.log("error " + e)
                 reject(e)

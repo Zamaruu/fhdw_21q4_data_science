@@ -1,4 +1,4 @@
-// const ctx = document.getElementById('lrChart');
+// const ctx = document.getElementById('lossChart');
 // const myChart = new Chart(ctx, {
 //     type: 'bar',
 //     data: {

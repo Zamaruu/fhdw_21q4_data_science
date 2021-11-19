@@ -18,8 +18,9 @@ def getBackendPath():
     save_path = save_path + "backend/"
     return save_path
 
-def saveDictToJSON(dict):
-    with open(getBackendPath() + 'output.json', 'w') as fp:
+def saveDictToJSON(name, dict):
+    removeOutputFile()
+    with open(getBackendPath() + name, 'w') as fp:
         json.dump(dict, fp)
 
 def convertDateTimeListToString(py_dt_list):

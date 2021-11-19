@@ -51,8 +51,8 @@ print(args)
 num_epochs = int(args["epochs"])
 num_prediction = int(args["days"])
 
-# num_epochs = 5
-# num_prediction = 15
+num_epochs = 5
+num_prediction = 15
 
 # --------------------------------------------------------
 # Importieren der Analysedaten
@@ -173,8 +173,21 @@ api_dict = {
   "past_tavg": temp_test[3000:].tolist()
 }
 
+# ----------------------------------------------------
+# Analysedetails zurückgeben
+analyse_dict = {
+  "epochs": num_epochs,
+  "days":num_prediction,
+  "rmse": rmse,
+  "loss_history": history.history['loss'],
+  "mae_history": history.history['mae']
+}
+api_dict.update(analyse_dict)
 print(api_dict)
-saveDictToJSON(api_dict)
+#print(api_dict)
+saveDictToJSON("output.json", api_dict)
+
+#saveDictToJSON("analyse.json", analyse_dict)
 
 # api_df = pd.DataFrame({'forecast_tavg': forecast})
 # api_df["forecast_dates"] = forecast_dates

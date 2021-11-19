@@ -3,6 +3,7 @@ body {
     margin: 0;
 }
 
+/* Kleine Displays */
 @media all and (min-width:769px) and (max-width: 800px) {
     .chart-container {
         display: block;
@@ -12,6 +13,7 @@ body {
     }
 }
 
+/* Große Displays */
 @media all and (min-width:1024px){
     .chart-container {
         display: block;
@@ -21,6 +23,28 @@ body {
         margin: 20px auto;
         padding-top: 25px;
     }
+}
+
+/* Kleine Displays */
+@media all and (min-width:769px) and (max-width: 800px) {
+  .analysis-chart-container {
+      display: block;
+      position: relative; 
+      margin: 20px auto;
+      padding-top: 25px;
+  }
+}
+
+/* Große Displays */
+@media all and (min-width:1024px){
+  .analysis-chart-container {
+      display: block;
+      position: relative; 
+      height:20vh; 
+      width:25vw;
+      margin: 20px auto;
+      padding-top: 25px;
+  }
 }
 
 /* canvas{
