@@ -48,11 +48,11 @@ def predict_dates(num_prediction):
 # Importieren der Analyse Argumente
 args = getApiArguments()
 print(args)
-num_epochs = args["epochs"]
-num_prediction = args["days"]
+num_epochs = int(args["epochs"])
+num_prediction = int(args["days"])
 
-num_epochs = 5
-num_prediction = 15
+# num_epochs = 5
+# num_prediction = 15
 
 # --------------------------------------------------------
 # Importieren der Analysedaten

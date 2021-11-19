@@ -25,7 +25,7 @@ def saveDictToJSON(dict):
 def convertDateTimeListToString(py_dt_list):
     #To numpy_datetime64
     new_dates = np.array(py_dt_list, dtype='datetime64')
-    new_dates = np.datetime_as_string(new_dates, timezone='local')
+    new_dates = np.datetime_as_string(new_dates, timezone='local', unit='D', casting="unsafe")
     # new_dates = [date.astype(dt.datetime) for date in new_dates]
     # if(type(new_dates[0]) == int):
     #     new_dates = [dt.datetime.fromtimestamp(int(ts)) for ts in new_dates]
