@@ -8,8 +8,15 @@ from keras.preprocessing.sequence import TimeseriesGenerator
 from keras.models import Sequential
 from keras.layers import LSTM, Dense, Dropout
 from math import sqrt
+from weather_api import getApiArguments
 
 # Methoden
+args = getApiArguments()
+print(args)
+num_epochs = args["epochs"]
+num_prediction = args["days"]
+
+# Importieren der Analyse Argumente
 
 # Importieren der Analysedaten
 path = os.path.dirname(__file__)
@@ -71,7 +78,6 @@ model.add(Dropout(0.2))
 model.add(Dense(1))
 model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
 
-num_epochs = 25
 history = model.fit(train_generator, epochs=num_epochs, verbose=1, batch_size = batch_size)
 
 # ----------------------------------------------------
@@ -131,7 +137,6 @@ def predict_dates(num_prediction):
     prediction_dates = pd.date_range(last_date, periods=num_prediction+1).tolist()
     return prediction_dates
 
-num_prediction = 62
 forecast = predict(num_prediction, model)
 forecast = forecast.reshape((-1))
 forecast_dates = predict_dates(num_prediction)

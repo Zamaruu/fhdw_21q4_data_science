@@ -25,8 +25,9 @@ for (var idx in apis) {
     console.log("listen to path 'localhost:" + port + "/" + name + "'.")
     app.post("/" + name, async (req, res) => {
         try {
-            console.log("Starting")
-            await makeFile(req.body['dates'])
+            console.log("Starting with")
+            const data = req.body;
+            await makeFile(data)
             await startPython(req.path.replace("/", ""))
             var response = await readPythonOutput()
             res.json(JSON.parse(response))
@@ -49,8 +50,10 @@ var returnError = function (res, error) {
  * @description Makes file for import in python
  */
 var makeFile = function (content) {
+    console.log(content)
+    content = JSON.stringify(content)
     return new Promise((resolve, reject) => {
-        fs.writeFile('import.csv', content, (e) => {
+        fs.writeFile('import.json', content, (e) => {
             if (e) {
                 console.log("error " + e)
                 reject(e)
