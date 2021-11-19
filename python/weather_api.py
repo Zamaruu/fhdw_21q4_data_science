@@ -1,6 +1,9 @@
 import os
+from types import new_class
 from pandas.core.frame import DataFrame
 import json
+import numpy as np
+import datetime as dt
 
 def getApiArguments():
     path = getBackendPath()
@@ -15,7 +18,26 @@ def getBackendPath():
     save_path = save_path + "backend/"
     return save_path
 
-def saveDFtoCSV(df: DataFrame):
+def saveDictToJSON(dict):
+    with open(getBackendPath() + 'output.json', 'w') as fp:
+        json.dump(dict, fp)
+
+def convertDateTimeListToString(py_dt_list):
+    #To numpy_datetime64
+    new_dates = np.array(py_dt_list, dtype='datetime64')
+    new_dates = np.datetime_as_string(new_dates, timezone='local')
+    # new_dates = [date.astype(dt.datetime) for date in new_dates]
+    # if(type(new_dates[0]) == int):
+    #     new_dates = [dt.datetime.fromtimestamp(int(ts)) for ts in new_dates]
+    # print(new_dates)
+    # new_dates = [date.strftime('%d.%m.%Y') for date in new_dates]
+
+    print(new_dates)
+    return new_dates
+    #for py_date in py_dt_list:
+
+
+def saveDFtoJSON(df: DataFrame):
     removeOutputFile()
     df.to_json(getBackendPath() + 'output.json')
 

@@ -8,16 +8,53 @@ from keras.preprocessing.sequence import TimeseriesGenerator
 from keras.models import Sequential
 from keras.layers import LSTM, Dense, Dropout
 from math import sqrt
-from weather_api import getApiArguments
+from weather_api import convertDateTimeListToString, getApiArguments, saveDictToJSON
+import datetime
 
+print_values = True
+
+# --------------------------------------------------------
 # Methoden
+def temp_forecast(days_forecast, model):
+    prediction_list = temp_data
+
+    for _ in range(days_forecast):
+        x = prediction_list
+        #x = x.reshape((1, 1))
+        out = model.predict(x)[0][0]
+        prediction_list = np.append(prediction_list, out)
+    
+    prediction_list = prediction_list[days_forecast-1:]
+
+def predict(num_prediction, model):
+    #look_back = 1095
+    prediction_list = temp_data[-look_back:]
+    
+    for _ in range(num_prediction):
+        x = prediction_list[-look_back:]
+        x = x.reshape((1, look_back, 1))
+        out = model.predict(x)[0][0]
+        prediction_list = np.append(prediction_list, out)
+    prediction_list = prediction_list[look_back-1:]
+        
+    return prediction_list
+    
+def predict_dates(num_prediction):
+    last_date = weather_pb_df['date'].values[-1]
+    prediction_dates = pd.date_range(last_date, periods=num_prediction+1).tolist()
+    return prediction_dates
+
+# --------------------------------------------------------
+# Importieren der Analyse Argumente
 args = getApiArguments()
 print(args)
 num_epochs = args["epochs"]
 num_prediction = args["days"]
 
-# Importieren der Analyse Argumente
+num_epochs = 5
+num_prediction = 15
 
+# --------------------------------------------------------
 # Importieren der Analysedaten
 path = os.path.dirname(__file__)
 filenames = glob.glob(path + "/data" + "/export*.csv")
@@ -58,13 +95,10 @@ print(len(temp_train))
 print(len(temp_test))
 
 look_back = 30
-batch_size = 90
+batch_size = 100
 
 train_generator = TimeseriesGenerator(temp_train, temp_train, length=look_back, batch_size=batch_size)     
 test_generator = TimeseriesGenerator(temp_test, temp_test, length=look_back, batch_size=30)
-
-# temp_train = scaler.inverse_transform(temp_train)
-# temp_test = scaler.inverse_transform(temp_test)
 
 # ----------------------------------------------------
 
@@ -84,23 +118,22 @@ history = model.fit(train_generator, epochs=num_epochs, verbose=1, batch_size = 
 # Prediction
 prediction = model.predict(test_generator)
 
-close_train = temp_train.reshape((-1))
-close_test = temp_test.reshape((-1))
+temp_train = temp_train.reshape((-1))
+temp_test = temp_test.reshape((-1))
 prediction = prediction.reshape((-1))
 
-# plt.plot(prediction)
-# plt.title("Prediction")
 rmse = sqrt(mean_squared_error(temp_test[:len(prediction)], prediction))
 print('RMSE: %.3f' % rmse)
 
 print(len(prediction))
-plt.plot(date_train, close_train, 'blue', label="Data")
-plt.plot(date_test[:len(prediction)], prediction[:len(date_test)], 'green', label="Prediction")
-plt.plot(date_test, close_test, "orange", label="Real Value")
+if(print_values):
+    plt.plot(date_train, temp_train, 'blue', label="Data")
+    plt.plot(date_test[:len(prediction)], prediction[:len(date_test)], 'green', label="Prediction")
+    plt.plot(date_test, temp_test, "orange", label="Real Value")
 
-# If you don't like the break in the graph, change 90 to 89 in the above line
-plt.gcf().autofmt_xdate()
-plt.show()
+    # If you don't like the break in the graph, change 90 to 89 in the above line
+    plt.gcf().autofmt_xdate()
+    plt.show()
 
 # plt.plot(len(prediction) ,prediction)
 # plt.show()
@@ -108,46 +141,44 @@ plt.show()
 # ----------------------------------------------------
 # Forecasting
 
-def temp_forecast(days_forecast, model):
-    prediction_list = temp_data
-
-    for _ in range(days_forecast):
-        x = prediction_list
-        #x = x.reshape((1, 1))
-        out = model.predict(x)[0][0]
-        prediction_list = np.append(prediction_list, out)
-    
-    prediction_list = prediction_list[days_forecast-1:]
-
-def predict(num_prediction, model):
-    #look_back = 1095
-    prediction_list = temp_data[-look_back:]
-    
-    for _ in range(num_prediction):
-        x = prediction_list[-look_back:]
-        x = x.reshape((1, look_back, 1))
-        out = model.predict(x)[0][0]
-        prediction_list = np.append(prediction_list, out)
-    prediction_list = prediction_list[look_back-1:]
-        
-    return prediction_list
-    
-def predict_dates(num_prediction):
-    last_date = weather_pb_df['date'].values[-1]
-    prediction_dates = pd.date_range(last_date, periods=num_prediction+1).tolist()
-    return prediction_dates
-
 forecast = predict(num_prediction, model)
 forecast = forecast.reshape((-1))
 forecast_dates = predict_dates(num_prediction)
 
-print(forecast_dates)
-print(forecast)
+# print(forecast_dates)
+# print(forecast)
 
-# plt.plot(date_train, close_train, 'blue', label="Data")
-# plt.plot(date_test[:len(prediction)], prediction, 'blue', label="Prediction")
-plt.plot(date_test[3000:], close_test[3000:], "blue", label="Real Value")
-plt.plot(forecast_dates, forecast, "orange", label="Forecast")
+if(print_values):
+    # plt.plot(date_train, temp_train, 'blue', label="Data")
+    # plt.plot(date_test[:len(prediction)], prediction, 'blue', label="Prediction")
+    plt.plot(date_test[3000:], temp_test[3000:], "blue", label="Real Value")
+    plt.plot(forecast_dates, forecast, "orange", label="Forecast")
 
-plt.gcf().autofmt_xdate()
-plt.show()
+    plt.gcf().autofmt_xdate()
+    plt.show()
+
+# ----------------------------------------------------
+# Forecast an API zurückgeben
+
+forecast_dates = [item.to_pydatetime() for item in forecast_dates]
+forecast_dates = convertDateTimeListToString(forecast_dates)
+
+date_test = date_test[3000:].values
+date_test = convertDateTimeListToString(date_test)
+
+api_dict = {
+  "forecast_tavg": forecast.tolist(),
+  "forecast_dates": forecast_dates.tolist(),
+  "past_date": date_test.tolist(),
+  "past_tavg": temp_test[3000:].tolist()
+}
+
+print(api_dict)
+saveDictToJSON(api_dict)
+
+# api_df = pd.DataFrame({'forecast_tavg': forecast})
+# api_df["forecast_dates"] = forecast_dates
+# api_df["past_date"] = pd.Series(date_test[3000:])
+# api_df["past_tavg"] = pd.Series(temp_test[3000:])
+
+# saveDFtoJSON(api_df)

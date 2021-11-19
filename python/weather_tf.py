@@ -12,7 +12,7 @@ import glob
 
 from tensorflow.python.eager.monitoring import Metric
 
-from weather_api import saveDFtoCSV, removeOutputFile
+from weather_api import saveDFtoJSON, removeOutputFile
 
 #make nunpy outputs easier to read
 np.set_printoptions(precision=3, suppress=True)
@@ -232,4 +232,4 @@ print(df.head())
 
 predict = dnn_model.predict(df)
 
-saveDFtoCSV(pd.DataFrame(data=predict))
+saveDFtoJSON(pd.DataFrame(data=predict))
