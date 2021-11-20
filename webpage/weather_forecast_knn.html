@@ -33,19 +33,19 @@
             <div class="ms-Grid-row">
                 <div class="ms-Grid-col ms-sm6 ms-md4 ms-lg2">
                     <div class="docs-DialogExample-default">
-                        <div class="ms-Dialog">
-                            <div class="ms-MessageBar ms-MessageBar--severeWarning">
-                                <div class="ms-MessageBar-content">
-                                  <div class="ms-MessageBar-icon">
-                                    <i class="ms-Icon ms-Icon--Warning"></i>
-                                  </div>
-                                  <div class="ms-MessageBar-text">
-                                    Stellen Sie vor einem API-Aufruf sicher das dass Backend mithilfe von <b>/ProjektOrdner/Backend npm start</b> gestartet wurde!
-                                    <br />
-                                  </div>
-                                </div>
-                            </div>
+                        <div class="ms-Dialog">       
                           <div class="ms-Dialog-title">LSTM-Forecast starten</div>
+                          <div class="ms-MessageBar ms-MessageBar--severeWarning">
+                              <div class="ms-MessageBar-content">
+                                <div class="ms-MessageBar-icon">
+                                  <i class="ms-Icon ms-Icon--Warning"></i>
+                                </div>
+                                <div class="ms-MessageBar-text">
+                                  Stellen Sie vor einem API-Aufruf sicher das dass Backend mithilfe von <b>/ProjektOrdner/Backend npm start</b> gestartet wurde!
+                                  <br />
+                                </div>
+                              </div>
+                          </div>
                           <div class="ms-Dialog-content">
                             <p class="ms-Dialog-subText">Um den LSTM-Forecast durchzuführen müssen Dauer des Forecast sowie Trainings-Epochen angegeben werden!</p>
                             <div class="ms-TextField ms-TextField--underlined">
@@ -83,7 +83,19 @@
                           <div class="ms-Panel-contentInner">
                             <p class="ms-Panel-headerText">Details der Analyse</p>
                             <div class="ms-Panel-content">
-                              <span class="ms-font-m">Laufzeit, usw...</span> 
+                              <div class="ms-MessageBar ms-MessageBar--warning">
+                                <div class="ms-MessageBar-content">
+                                  <div class="ms-MessageBar-icon">
+                                    <i class="ms-Icon ms-Icon--Info"></i>
+                                  </div>
+                                  <div class="ms-MessageBar-text">
+                                    Sollten die Charts nicht angezeigt werden, schließen Sie das Panel und öffnen Sie es erneut.
+                                  </div>
+                                </div>
+                              </div> 
+                              <span class="ms-font-m" id="days"></span><br>
+                              <span class="ms-font-m" id="epochs"></span><br>
+                              <span class="ms-font-m" id="rmse"></span><br>
                               <div class="analysis-chart-container">
                                 <canvas id="lossChart"></canvas>
                               </div>

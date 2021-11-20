@@ -32,16 +32,12 @@ async function weather_lstm() {
             set_loading(true)
             const response = await fetch(url, {
                 method: 'POST', // *GET, POST, PUT, DELETE, etc.
-                //mode: 'cors', // no-cors, *cors, same-origin
-                //cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-                //credentials: 'same-origin', // include, *same-origin, omit
                 headers: {
                 'Content-Type': 'application/json',
                 //'Access-Control-Allow-Origin': '*',
                 'dates':'2021-01-10 2021-01-11',
                 'days': '${days_to_forecast}',
                 'epochs': '${lstm_epochs}'
-                // 'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: JSON.stringify(request) // body data type must match "Content-Type" header
             });
@@ -53,6 +49,9 @@ async function weather_lstm() {
             lstm_forecast_chart(data["past_date"], data["past_tavg"], data["forecast_dates"], data["forecast_tavg"]);
             loss_chart(data["loss_history"])
             mae_chart(data["mae_history"])
+            document.getElementById("days").textContent= "Forecast-Tage: " + data["days"];
+            document.getElementById("epochs").textContent= "Epochen: "+ data["epochs"];
+            document.getElementById("rmse").textContent= "RMSE: " + data["rmse"];
         } catch (error) {
             set_loading(false)
             console.log(error)
