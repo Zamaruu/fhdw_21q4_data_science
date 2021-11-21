@@ -25,7 +25,6 @@ async function weather_lstm() {
     if(days_to_forecast != null  || lstm_epochs != null ){
         const request = {"dates":"2021-01-10\n2021-01-11", "days": days_to_forecast, "epochs": lstm_epochs}
         const url = base_url + "/lstm"
-        
 
         console.log("makeing request to " + url)
         try {
@@ -35,9 +34,49 @@ async function weather_lstm() {
                 headers: {
                 'Content-Type': 'application/json',
                 //'Access-Control-Allow-Origin': '*',
-                'dates':'2021-01-10 2021-01-11',
-                'days': '${days_to_forecast}',
-                'epochs': '${lstm_epochs}'
+                },
+                body: JSON.stringify(request) // body data type must match "Content-Type" header
+            });
+            set_loading(false)
+            console.log(response.status)
+            const data = await response.json()
+            console.log(data); // parses JSON response into native JavaScript objects
+            set_loading(false)
+            lstm_forecast_chart(data["past_date"], data["past_tavg"], data["forecast_dates"], data["forecast_tavg"]);
+            loss_chart(data["loss_history"])
+            mae_chart(data["mae_history"])
+            document.getElementById("days").textContent= "Forecast-Tage: " + data["days"];
+            document.getElementById("epochs").textContent= "Epochen: "+ data["epochs"];
+            document.getElementById("rmse").textContent= "RMSE: " + (data["rmse"]).toFixed(2);
+            document.getElementById("runtime").textContent= "Runtime: " + Number((data["runtime"]).toFixed(2)) + " Sekunden";
+        } catch (error) {
+            set_loading(false)
+            console.log(error)
+        }
+    }
+    else {
+        return;
+    }
+
+}
+
+async function weather_lr() {
+    //Lesen der Argumente
+    const start = document.getElementById("forecast_start").value  
+    const end = document.getElementById("forecast_end").value
+    
+    if(start != null  || end != null ){
+        const request = {"start": start, "end": end}
+        const url = base_url + "/tf"        
+
+        console.log("makeing request to " + url)
+        try {
+            set_loading(true)
+            const response = await fetch(url, {
+                method: 'POST', // *GET, POST, PUT, DELETE, etc.
+                headers: {
+                'Content-Type': 'application/json',
+                //'Access-Control-Allow-Origin': '*',
                 },
                 body: JSON.stringify(request) // body data type must match "Content-Type" header
             });
@@ -62,6 +101,7 @@ async function weather_lstm() {
     }
 
 }
+
 
 
 function mae_chart(mae){

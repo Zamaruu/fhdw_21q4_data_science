@@ -12,7 +12,11 @@ import glob
 
 from tensorflow.python.eager.monitoring import Metric
 
-from weather_api import saveDFtoJSON, removeOutputFile
+from weather_api import saveDFtoJSON, getApiArguments
+
+
+args = getApiArguments()
+print(args)
 
 #make nunpy outputs easier to read
 np.set_printoptions(precision=3, suppress=True)
@@ -222,7 +226,7 @@ plt.plot(test_predictions, "red")
 # plt.plot(train_predictions, "red")
 
 
-df = pd.read_csv('../backend/import.csv', header=None)
+df = pd.read_json('../backend/import.json')
 df[0] = pd.to_datetime(df[0])
 
 df = df.sort_values(0)

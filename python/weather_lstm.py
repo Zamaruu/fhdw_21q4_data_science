@@ -9,7 +9,7 @@ from keras.models import Sequential
 from keras.layers import LSTM, Dense, Dropout
 from math import sqrt
 from weather_api import convertDateTimeListToString, getApiArguments, saveDictToJSON
-import datetime
+import time
 
 print_values = True
 
@@ -43,6 +43,8 @@ def predict_dates(num_prediction):
     last_date = weather_pb_df['date'].values[-1]
     prediction_dates = pd.date_range(last_date, periods=num_prediction+1).tolist()
     return prediction_dates
+
+start_time = time.time()
 
 # --------------------------------------------------------
 # Importieren der Analyse Argumente
@@ -157,6 +159,10 @@ if(print_values):
     plt.gcf().autofmt_xdate()
     plt.show()
 
+runtime = time.time() - start_time
+
+print("--- %s seconds ---" % (runtime))
+
 # ----------------------------------------------------
 # Forecast an API zurückgeben
 
@@ -180,7 +186,8 @@ analyse_dict = {
   "days":num_prediction,
   "rmse": rmse,
   "loss_history": history.history['loss'],
-  "mae_history": history.history['mae']
+  "mae_history": history.history['mae'],
+  "runtime": runtime
 }
 api_dict.update(analyse_dict)
 print(api_dict)
