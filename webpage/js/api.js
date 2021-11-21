@@ -3,12 +3,14 @@ const base_url = "http://localhost:3000"
 const chartLoader = document.getElementById('chart-loading-spinner');
 const chartCanvas = document.getElementById('lrChart');
 const detailPanel = document.getElementById('detailPanel');
+const train_test_chart = document.getElementById("knnPredChart");
 
 function set_loading(loading) {
     if(loading === true){
         chartCanvas.style.display = "none";
         chartLoader.style.display = "block";
         detailPanel.disabled = true;
+        train_test_chart.style.display = "none";
     }
     else {
         chartLoader.style.display = "none";
@@ -43,6 +45,7 @@ async function weather_lstm() {
             console.log(data); // parses JSON response into native JavaScript objects
             set_loading(false)
             lstm_forecast_chart(data["past_date"], data["past_tavg"], data["forecast_dates"], data["forecast_tavg"]);
+            lstm_training_chart(data["train_date"], data["train_tavg"], data["valid_date"], data["valid_tavg"], data["prediction_date"], data["prediction_tavg"],)
             loss_chart(data["loss_history"])
             mae_chart(data["mae_history"])
             document.getElementById("days").textContent= "Forecast-Tage: " + data["days"];
@@ -102,8 +105,7 @@ async function weather_lr() {
 
 }
 
-
-
+// Chart Functions
 function mae_chart(mae){
     const ctx = document.getElementById('maeChart');
     const myChart = new Chart(ctx, {
@@ -140,7 +142,6 @@ function loss_chart(loss){
     });
 }
 
-// Chart Functions
 function lstm_forecast_chart(old_dates, old_tavg, forecast_dates, forecast_tavg) {
     for(var i = 0; i < old_dates.length; i++){
         forecast_tavg.unshift(null);
@@ -163,6 +164,44 @@ function lstm_forecast_chart(old_dates, old_tavg, forecast_dates, forecast_tavg)
                     label: 'Forecast mit LSTM',
                     data: forecast_tavg,
                     borderColor: 'rgb(204, 24, 24)',
+                    tension: 0.1
+                },
+        ],
+        },
+    });
+}
+
+function lstm_training_chart(train_dates, train_tavg, test_dates, test_tavg, pred_dates, pred_tavg){
+    for(var i = 0; i < train_dates.length; i++){
+        test_tavg.unshift(null);
+        pred_tavg.unshift(null);
+    }
+
+    const ctx = document.getElementById('knnPredChart');
+    train_test_chart.style.display = "block";
+    const myChart = new Chart(ctx, {
+        data: {
+            labels: train_dates.concat(test_dates),
+            datasets: [
+                {
+                    type: 'line',
+                    label: 'Trainings Daten',
+                    data: train_tavg,
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                },
+                {
+                    type: 'line',
+                    label: 'Prediction Daten',
+                    data: pred_tavg,
+                    borderColor: 'rgb(204, 24, 24)',
+                    tension: 0.1
+                },
+                {
+                    type: 'line',
+                    label: 'Validierungsdaten',
+                    data: test_tavg,
+                    borderColor: 'rgb(24, 204, 24)',
                     tension: 0.1
                 },
         ],

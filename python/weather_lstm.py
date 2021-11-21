@@ -105,7 +105,7 @@ test_generator = TimeseriesGenerator(temp_test, temp_test, length=look_back, bat
 # ----------------------------------------------------
 
 model = Sequential()
-model.add(LSTM(128, activation='relu', return_sequences=True, input_shape=(look_back,1)))
+model.add(LSTM(128, activation='sigmoid', return_sequences=True, input_shape=(look_back,1)))
 model.add(Dropout(0.2))
 model.add(LSTM(60, activation='relu', return_sequences=True, input_shape=(look_back,1)))
 model.add(Dropout(0.2))
@@ -124,7 +124,7 @@ temp_train = temp_train.reshape((-1))
 temp_test = temp_test.reshape((-1))
 prediction = prediction.reshape((-1))
 
-rmse = sqrt(mean_squared_error(temp_test[:len(prediction)], prediction))
+rmse = sqrt(mean_squared_error(temp_test[:len(prediction)], prediction[:len(temp_test)]))
 print('RMSE: %.3f' % rmse)
 
 print(len(prediction))
@@ -137,8 +137,14 @@ if(print_values):
     plt.gcf().autofmt_xdate()
     plt.show()
 
-# plt.plot(len(prediction) ,prediction)
-# plt.show()
+train_test_dict = {
+    "train_date": convertDateTimeListToString(date_train).tolist(),
+    "train_tavg": temp_train.tolist(),
+    "prediction_date": convertDateTimeListToString(date_test).tolist(),
+    "prediction_tavg": prediction[:len(date_test)].tolist(),
+    "valid_date": convertDateTimeListToString(date_test).tolist(),
+    "valid_tavg": temp_test.tolist()
+}
 
 # ----------------------------------------------------
 # Forecasting
@@ -172,11 +178,14 @@ forecast_dates = convertDateTimeListToString(forecast_dates)
 date_test = date_test[3000:].values
 date_test = convertDateTimeListToString(date_test)
 
+date_train = convertDateTimeListToString(date_train)
+validation_date = convertDateTimeListToString(date_test)
+
 api_dict = {
   "forecast_tavg": forecast.tolist(),
   "forecast_dates": forecast_dates.tolist(),
   "past_date": date_test.tolist(),
-  "past_tavg": temp_test[3000:].tolist()
+  "past_tavg": temp_test[3000:].tolist(),
 }
 
 # ----------------------------------------------------
@@ -190,6 +199,8 @@ analyse_dict = {
   "runtime": runtime
 }
 api_dict.update(analyse_dict)
+api_dict.update(train_test_dict)
+
 print(api_dict)
 #print(api_dict)
 saveDictToJSON("output.json", api_dict)
