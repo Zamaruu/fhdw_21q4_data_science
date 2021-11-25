@@ -5,17 +5,22 @@ const chartCanvas = document.getElementById('lrChart');
 const detailPanel = document.getElementById('detailPanel');
 const train_test_chart = document.getElementById("knnPredChart");
 
-function set_loading(loading) {
+function set_loading(loading, show_train_chart) {
     if(loading === true){
         chartCanvas.style.display = "none";
         chartLoader.style.display = "block";
         detailPanel.disabled = true;
-        train_test_chart.style.display = "none";
+        if(show_train_chart){
+            train_test_chart.style.display = "none";
+        }
     }
     else {
         chartLoader.style.display = "none";
         chartCanvas.style.display = "block";
         detailPanel.disabled = false;
+        if(show_train_chart){
+            train_test_chart.style.display = "block";
+        }
     }
 }
 
@@ -30,7 +35,7 @@ async function weather_lstm() {
 
         console.log("makeing request to " + url)
         try {
-            set_loading(true)
+            set_loading(true, true)
             const response = await fetch(url, {
                 method: 'POST', // *GET, POST, PUT, DELETE, etc.
                 headers: {
@@ -39,11 +44,11 @@ async function weather_lstm() {
                 },
                 body: JSON.stringify(request) // body data type must match "Content-Type" header
             });
-            set_loading(false)
+            set_loading(false, true)
             console.log(response.status)
             const data = await response.json()
             console.log(data); // parses JSON response into native JavaScript objects
-            set_loading(false)
+            set_loading(false, true)
             lstm_forecast_chart(data["past_date"], data["past_tavg"], data["forecast_dates"], data["forecast_tavg"]);
             lstm_training_chart(data["train_date"], data["train_tavg"], data["valid_date"], data["valid_tavg"], data["prediction_date"], data["prediction_tavg"],)
             loss_chart(data["loss_history"])
@@ -53,7 +58,7 @@ async function weather_lstm() {
             document.getElementById("rmse").textContent= "RMSE: " + (data["rmse"]).toFixed(2);
             document.getElementById("runtime").textContent= "Runtime: " + Number((data["runtime"]).toFixed(2)) + " Sekunden";
         } catch (error) {
-            set_loading(false)
+            set_loading(false, true)
             console.log(error)
         }
     }
@@ -74,7 +79,7 @@ async function weather_lr() {
 
         console.log("makeing request to " + url)
         try {
-            set_loading(true)
+            set_loading(true, false)
             const response = await fetch(url, {
                 method: 'POST', // *GET, POST, PUT, DELETE, etc.
                 headers: {
@@ -83,11 +88,11 @@ async function weather_lr() {
                 },
                 body: JSON.stringify(request) // body data type must match "Content-Type" header
             });
-            set_loading(false)
+            set_loading(false, false)
             console.log(response.status)
             const data = await response.json()
             console.log(data); // parses JSON response into native JavaScript objects
-            set_loading(false)
+            set_loading(false, false)
             lstm_forecast_chart(data["past_date"], data["past_tavg"], data["forecast_dates"], data["forecast_tavg"]);
             loss_chart(data["loss_history"])
             mae_chart(data["mae_history"])
@@ -95,7 +100,7 @@ async function weather_lr() {
             document.getElementById("epochs").textContent= "Epochen: "+ data["epochs"];
             document.getElementById("rmse").textContent= "RMSE: " + data["rmse"];
         } catch (error) {
-            set_loading(false)
+            set_loading(false, false)
             console.log(error)
         }
     }
@@ -104,6 +109,48 @@ async function weather_lr() {
     }
 
 }
+
+async function weather_acf() {
+    //Lesen der Argumente
+    const start = document.getElementById("acf_start").value  
+    const end = document.getElementById("acf_end").value
+    
+    if(start != null  || end != null ){
+        const request = {"start": start, "end": end}
+        const url = base_url + "/acf"        
+
+        console.log("makeing request to " + url)
+        try {
+            set_loading(true, false)
+            const response = await fetch(url, {
+                method: 'POST', // *GET, POST, PUT, DELETE, etc.
+                headers: {
+                'Content-Type': 'application/json',
+                //'Access-Control-Allow-Origin': '*',
+                },
+                body: JSON.stringify(request) // body data type must match "Content-Type" header
+            });
+            set_loading(false, false)
+            console.log(response.status)
+            const data = await response.json()
+            console.log(data); // parses JSON response into native JavaScript objects
+            acf_chart(data["acf"], data["ci_pos"], data["ci_neg"]);
+            // loss_chart(data["loss_history"])
+            // mae_chart(data["mae_history"])
+            // document.getElementById("days").textContent= "Forecast-Tage: " + data["days"];
+            // document.getElementById("epochs").textContent= "Epochen: "+ data["epochs"];
+            // document.getElementById("rmse").textContent= "RMSE: " + data["rmse"];
+        } catch (error) {
+            set_loading(false, false)
+            console.log(error)
+        }
+    }
+    else {
+        return;
+    }
+
+}
+
 
 // Chart Functions
 function mae_chart(mae){
@@ -202,6 +249,45 @@ function lstm_training_chart(train_dates, train_tavg, test_dates, test_tavg, pre
                     label: 'Validierungsdaten',
                     data: test_tavg,
                     borderColor: 'rgb(24, 204, 24)',
+                    tension: 0.1
+                },
+        ],
+        },
+    });
+}
+
+function acf_chart(acf, ci_pos, ci_neg){
+    // for(var i = 0; i < train_dates.length; i++){
+    //     test_tavg.unshift(null);
+    //     pred_tavg.unshift(null);
+    // }
+
+    x_values = Array.from(Array(acf.length).keys())
+
+    const ctx = document.getElementById('lrChart');
+    const myChart = new Chart(ctx, {
+        data: {
+            labels: x_values,
+            datasets: [
+                {
+                    type: 'line',
+                    label: 'ci_pos Daten',
+                    data: ci_pos,
+                    borderColor: 'rgb(204, 24, 24)',
+                    tension: 0.1
+                },
+                {
+                    type: 'line',
+                    label: 'ci_neg Daten',
+                    data: ci_neg,
+                    borderColor: 'rgb(204, 24, 24)',
+                    tension: 0.1
+                },
+                {
+                    type: 'line',
+                    label: 'ACF',
+                    data: acf,
+                    borderColor: 'rgb(75, 192, 192)',
                     tension: 0.1
                 },
         ],

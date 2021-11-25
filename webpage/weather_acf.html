@@ -34,19 +34,30 @@
                     <div class="docs-DialogExample-default">
                         <div class="ms-Dialog">
                           <div class="ms-Dialog-title">Auto-Korrelation starten</div>
+                          <div class="ms-MessageBar ms-MessageBar--severeWarning">
+                              <div class="ms-MessageBar-content">
+                                <div class="ms-MessageBar-icon">
+                                  <i class="ms-Icon ms-Icon--Warning"></i>
+                                </div>
+                                <div class="ms-MessageBar-text">
+                                  Stellen Sie vor einem API-Aufruf sicher das dass Backend mithilfe von <b>/ProjektOrdner/Backend npm start</b> gestartet wurde!
+                                  <br />
+                                </div>
+                              </div>
+                          </div>
                           <div class="ms-Dialog-content">
                             <p class="ms-Dialog-subText">Um die Auto-Korrelation durchzuführen müssen Start und Enddatum sowie die Lag-Anzahl angegeben werden!</p>
                             <div class="ms-TextField ms-TextField--underlined">
                                 <label class="ms-Label">Startdatum</label>
-                                <input class="ms-TextField-field" type="text" value="" placeholder="Format: 1993.01.01">
+                                <input class="ms-TextField-field" id="acf_start" type="text" value="" placeholder="1993-01-01">
                             </div>
                             <div class="ms-TextField ms-TextField--underlined">
                                 <label class="ms-Label">Enddatum</label>
-                                <input class="ms-TextField-field" type="text" value="" placeholder="  Format: 1999.01.01">
+                                <input class="ms-TextField-field" id="acf_end" type="text" value="" placeholder="1994-01-01">
                             </div>
                           </div>
                           <div class="ms-Dialog-actions">
-                            <button onclick="startIndexScript()"  class="ms-Button ms-Dialog-action ms-Button--primary">
+                            <button onclick="weather_acf()"  class="ms-Button ms-Dialog-action ms-Button--primary">
                               <span class="ms-Button-label">Start</span> 
                             </button>
                             <button class="ms-Button ms-Dialog-action">
@@ -71,12 +82,21 @@
                           <div class="ms-Panel-contentInner">
                             <p class="ms-Panel-headerText">Details der Analyse</p>
                             <div class="ms-Panel-content">
-                              <span class="ms-font-m">Laufzeit, usw...</span> 
+                              <div class="ms-MessageBar ms-MessageBar--warning">
+                                <div class="ms-MessageBar-content">
+                                  <div class="ms-MessageBar-icon">
+                                    <i class="ms-Icon ms-Icon--Info"></i>
+                                  </div>
+                                  <div class="ms-MessageBar-text">
+                                    Sollten die Charts nicht angezeigt werden, schließen Sie das Panel und öffnen Sie es erneut.
+                                  </div>
+                                </div>
+                              </div> 
                             </div>
                           </div>
                         </div>
                     </div>
-                </div>      
+                </div>  
             </div>
         </div>
         <div class="chart-container">
@@ -96,4 +116,5 @@
 <script src="./js/navbar.js"></script>
 <script src="./js/initFabricCore.js"></script>
 <script src="./js/sampleChart.js"></script>
+<script src="./js/api.js"></script>
 </html>
