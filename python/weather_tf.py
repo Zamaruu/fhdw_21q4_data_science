@@ -263,8 +263,8 @@ df[0] = pd.to_datetime(df[0] * divider)
 result = {
     "forecast_tavg": toSimpleList(predict.tolist()),
     "forecast_dates": toSimpleList(forecast_dates.values.tolist()),
-    "past_date": toSimpleList(past_dates.values.tolist()),
-    "past_tavg": test_labels.values.tolist()
+    "past_date": toSimpleList(past_dates[365:].values.tolist()),
+    "past_tavg": test_labels[365*2:].values.tolist()
 }
 
 saveDictToJSON("output.json", result)

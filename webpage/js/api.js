@@ -93,12 +93,13 @@ async function weather_lr() {
             const data = await response.json()
             console.log(data); // parses JSON response into native JavaScript objects
             set_loading(false, false)
-            lstm_forecast_chart(data["past_date"], data["past_tavg"], data["forecast_dates"], data["forecast_tavg"]);
-            loss_chart(data["loss_history"])
-            mae_chart(data["mae_history"])
-            document.getElementById("days").textContent= "Forecast-Tage: " + data["days"];
-            document.getElementById("epochs").textContent= "Epochen: "+ data["epochs"];
-            document.getElementById("rmse").textContent= "RMSE: " + data["rmse"];
+            document.getElementById('detailPanel').disabled = true;;
+            lr_forecast(data["past_date"], data["past_tavg"], data["forecast_dates"], data["forecast_tavg"]);
+            // loss_chart(data["loss_history"])
+            // mae_chart(data["mae_history"])
+            // document.getElementById("days").textContent= "Forecast-Tage: " + data["days"];
+            // document.getElementById("epochs").textContent= "Epochen: "+ data["epochs"];
+            // document.getElementById("rmse").textContent= "RMSE: " + data["rmse"];
         } catch (error) {
             set_loading(false, false)
             console.log(error)
@@ -134,6 +135,7 @@ async function weather_acf() {
             console.log(response.status)
             const data = await response.json()
             console.log(data); // parses JSON response into native JavaScript objects
+            document.getElementById('detailPanel').disabled = true;
             acf_chart(data["acf"], data["ci_pos"], data["ci_neg"]);
             // loss_chart(data["loss_history"])
             // mae_chart(data["mae_history"])
@@ -182,6 +184,35 @@ function loss_chart(loss){
                     label: 'LOSS',
                     data: loss,
                     borderColor: 'rgb(120, 18, 199)',
+                    tension: 0.1
+                },
+        ],
+        },
+    });
+}
+
+function lr_forecast(old_dates, old_tavg, forecast_dates, forecast_tavg) {
+    for(var i = 0; i < old_dates.length; i++){
+        forecast_tavg.unshift(null);
+    }
+
+    const ctx = document.getElementById('lrChart');
+    const myChart = new Chart(ctx, {
+        data: {
+            labels: old_dates.concat(forecast_dates),
+            datasets: [
+                {
+                    type: 'line',
+                    label: 'Vergangenheit',
+                    data: old_tavg,
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                },
+                {
+                    type: 'line',
+                    label: 'Forecast mit LR',
+                    data: forecast_tavg,
+                    borderColor: 'rgb(204, 24, 24)',
                     tension: 0.1
                 },
         ],
