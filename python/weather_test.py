@@ -2,10 +2,8 @@ import numpy as np
 import pandas as pd
 import os, glob, csv
 
-df = pd.read_csv("../backend/import.csv", header=None)
-print(df.head())
-df = pd.to_numeric(pd.to_datetime(df[0]))
+from weather_api import saveDFtoJSON, getApiArguments
 
-with open("../backend/output.csv", 'w', encoding='UTF8') as f:
-    writer = csv.writer(f)
-    writer.writerow(df)
+args = getApiArguments()
+df = pd.date_range(args['start'], args['end'], freq="d").to_frame()
+print(df)
