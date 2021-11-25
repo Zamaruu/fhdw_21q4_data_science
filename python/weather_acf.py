@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from statsmodels.graphics import tsaplots
+import statsmodels.api as sm
+from weather_api import convertDateTimeListToString, getApiArguments, saveDictToJSON
 
 # Argumente für diese Funktion Lag, Zeitspanne
 
@@ -32,40 +34,33 @@ weather_pb_df = weather_pb_df[['date', 'tavg']].set_index(['date'])
 end = 365
 
 plt.plot(weather_pb_df['1993-01-01':'1994-01-01'])
+plt.show()
 acf = weather_pb_df['1993-01-01':'1994-01-01']
 
 
 #print(acf)
-
-# Je mehr Lags desto weiter reicht die Zeit zurück und desto weniger hängen die Werte voneinander ab
-x = tsaplots.plot_acf(acf, lags=35)
-print(x)
-
-acf = acf["tavg"].autocorr(lag=35)
-print("ACF: " + str(acf))
-
+tsaplots.plot_acf(acf, lags=35)
 plt.show()
 
-# convert dataframe column to series (name is used to label the data)
-# weather_ts = pd.Series(weather_pb_df.tavg.values, index=weather_pb_df.date, name='tavg')
-# # define the time series frequency
-# weather_ts.index = pd.DatetimeIndex(weather_ts.index, freq=weather_ts.index.inferred_freq)
+# Je mehr Lags desto weiter reicht die Zeit zurück und desto weniger hängen die Werte voneinander ab
+acf_erg, ci = sm.tsa.acf(acf, nlags= 35, alpha=0.05) 
 
-# #  linearen Trend hinzufügen
-# weather_pb_df = tsatools.add_trend(weather_ts, trend='ct')
-# # Monate hinzufügen
-# weather_pb_df['date'] = weather_pb_df.index.date
+# Zentrieren der Confidence Level
+for i in range(0, len(acf_erg)):
+    ci[i] = ci[i] - acf_erg[i]
+    i = i + 1
 
-# # Alles hier drunter funktioniert noch nicht!!!!!!!
+ci_pos = [x[0] for x in ci]
+ci_neg = [x[1] for x in ci]
 
-# # partition the data
-# # Split into train and valid 
-# nTrain = len(weather_pb_df) - len(weather_pb_df) / 3    # Anzahl Trainingsdaten
-# train_df = weather_pb_df[:nTrain]
-# valid_df = weather_pb_df[nTrain:]
+plt.plot(acf_erg)
+plt.plot(ci)
+plt.show()
 
-# # acf = autocorrelation function
-# tsaplots.plot_acf(train_df['1993-01-01':'1994-01-01'].tavg) 
-# # der blaue Bereich im Bild besteht aus den Konf. Intervallen. Kann mit
-# # Parameter alpha geändert werden. Default: alpha=0.05 (95% Konf. Int.)
-# plt.show()
+acf_output = {
+    "acf": acf_erg.tolist(),
+    "ci_pos": ci_pos,
+    "ci_neg": ci_neg 
+}
+
+saveDictToJSON("output.json", acf_output)
