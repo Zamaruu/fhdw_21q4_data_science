@@ -2,7 +2,7 @@ import os
 import glob
 import numpy as np
 import pandas as pd
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
 from statsmodels.graphics import tsaplots
 
 # Argumente für diese Funktion Lag, Zeitspanne
@@ -13,7 +13,7 @@ filenames = glob.glob(path + "/data" + "/*.csv")
 
 dfs = []
 for filename in filenames:
-    dfs.append(pd.read_csv(filename))
+    dfs.append(pd.read_csv(filename, usecols=["date", "tavg"]))
 
 # Concatenate all data into one DataFrame
 weather_pb_df = pd.concat(dfs, ignore_index=True)
@@ -32,9 +32,17 @@ weather_pb_df = weather_pb_df[['date', 'tavg']].set_index(['date'])
 end = 365
 
 plt.plot(weather_pb_df['1993-01-01':'1994-01-01'])
+acf = weather_pb_df['1993-01-01':'1994-01-01']
 
-#Je mehr Lags desto weiter reicht die Zeit zurück und desto weniger hängen die Werte voneinander ab
-tsaplots.plot_acf(weather_pb_df['1993-01-01':'1994-01-01'], lags=35)
+
+#print(acf)
+
+# Je mehr Lags desto weiter reicht die Zeit zurück und desto weniger hängen die Werte voneinander ab
+x = tsaplots.plot_acf(acf, lags=35)
+print(x)
+
+acf = acf["tavg"].autocorr(lag=35)
+print("ACF: " + str(acf))
 
 plt.show()
 

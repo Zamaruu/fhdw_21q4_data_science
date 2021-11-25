@@ -1,6 +1,9 @@
 const express = require('express')
+const cors = require('cors')
 const app = express()
 const port = 3000;
+
+app.use(cors())
 app.use(express.json())
 
 var fs = require('fs')
@@ -22,10 +25,11 @@ for (var idx in apis) {
     console.log("listen to path 'localhost:" + port + "/" + name + "'.")
     app.post("/" + name, async (req, res) => {
         try {
-            console.log("Starting")
-            await makeFile(req.body['dates'])
+            console.log("Starting...")
+            const data = req.body;
+            await makeFile(data)
             await startPython(req.path.replace("/", ""))
-            var response = await readPythonOutput()
+            var response = await readPythonOutput("output.json")
             res.json(JSON.parse(response))
         } catch (e) {
             returnError(res, e)
@@ -46,8 +50,10 @@ var returnError = function (res, error) {
  * @description Makes file for import in python
  */
 var makeFile = function (content) {
+    console.log(content)
+    content = JSON.stringify(content)
     return new Promise((resolve, reject) => {
-        fs.writeFile('import.csv', content, (e) => {
+        fs.writeFile('import.json', content, (e) => {
             if (e) {
                 console.log("error " + e)
                 reject(e)
@@ -79,9 +85,9 @@ var startPython = function (name) {
 /**
  * @description returns Output from Python (per file)
  */
-var readPythonOutput = function () {
+var readPythonOutput = function (name) {
     return new Promise((resolve, reject) => {
-        fs.readFile('output.json', "utf8", (e, data) => {
+        fs.readFile(name, "utf8", (e, data) => {
             if (e) {
                 console.log("error " + e)
                 reject(e)

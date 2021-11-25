@@ -2,4 +2,8 @@ backend/node_modules
 backend/output.csv
 backend/output.json
 backend/import.csv
+backend/import.json
+backend/analyse.json
 python/__pycache__
+Pipfile
+Pipfile.lock

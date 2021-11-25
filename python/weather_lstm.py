@@ -2,37 +2,64 @@ import os
 import glob
 import numpy as np
 import pandas as pd
-from scipy.sparse import data
-import tensorflow as tf
+from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import MinMaxScaler
+from keras.preprocessing.sequence import TimeseriesGenerator
 from keras.models import Sequential
-from keras.layers import LSTM,Dense ,Dropout, Bidirectional
-from numpy import array
-from tensorflow.python.ops.gen_array_ops import reshape
-from weather_api import saveDFtoCSV, removeOutputFile
+from keras.layers import LSTM, Dense, Dropout
+from math import sqrt
+from weather_api import convertDateTimeListToString, getApiArguments, saveDictToJSON
+import time
 
-def data_split(sequence, n_timestamp):
-    X = []
-    y = []
-    for i in range(len(sequence)):
-        end_ix = i + n_timestamp
-        if end_ix > len(sequence)-1:
-            break
-        # i to end_ix as input
-        # end_ix as target output
-        seq_x, seq_y = sequence[i:end_ix], sequence[end_ix]
-        X.append(seq_x)
-        y.append(seq_y)
-    return array(X), array(y)
+print_values = True
 
-# ------------------------------------------------------------
+# --------------------------------------------------------
+# Methoden
+def temp_forecast(days_forecast, model):
+    prediction_list = temp_data
 
-# Daten einlesen
-# Trainingsdaten
+    for _ in range(days_forecast):
+        x = prediction_list
+        #x = x.reshape((1, 1))
+        out = model.predict(x)[0][0]
+        prediction_list = np.append(prediction_list, out)
+    
+    prediction_list = prediction_list[days_forecast-1:]
 
+def predict(num_prediction, model):
+    #look_back = 1095
+    prediction_list = temp_data[-look_back:]
+    
+    for _ in range(num_prediction):
+        x = prediction_list[-look_back:]
+        x = x.reshape((1, look_back, 1))
+        out = model.predict(x)[0][0]
+        prediction_list = np.append(prediction_list, out)
+    prediction_list = prediction_list[look_back-1:]
+        
+    return prediction_list
+    
+def predict_dates(num_prediction):
+    last_date = weather_pb_df['date'].values[-1]
+    prediction_dates = pd.date_range(last_date, periods=num_prediction+1).tolist()
+    return prediction_dates
+
+start_time = time.time()
+
+# --------------------------------------------------------
+# Importieren der Analyse Argumente
+args = getApiArguments()
+print(args)
+num_epochs = int(args["epochs"])
+num_prediction = int(args["days"])
+
+# num_epochs = 5
+# num_prediction = 15
+
+# --------------------------------------------------------
+# Importieren der Analysedaten
 path = os.path.dirname(__file__)
-filenames = glob.glob(path + "/data" + "/*19.csv")
+filenames = glob.glob(path + "/data" + "/export*.csv")
 
 dfs = []
 for filename in filenames:
@@ -41,117 +68,148 @@ for filename in filenames:
 
 # Concatenate all data into one DataFrame
 weather_pb_df = pd.concat(dfs, ignore_index=True)
+weather_pb_df.dropna()
 weather_pb_df['date'] = pd.to_datetime(weather_pb_df['date'])
 weather_pb_df = weather_pb_df.sort_values(by=['date'], ascending=True)
+print(weather_pb_df.info())
 print(weather_pb_df.head())
 print(weather_pb_df.tail())
 
-# Predictiondaten
-testfile = glob.glob(path + "/data" + "/*20.csv")
-pred_pb_df = pd.read_csv(testfile[0], usecols=["date", "tavg"])
-pred_pb_df['date'] = pd.to_datetime(pred_pb_df['date'])
-pred_pb_df = pred_pb_df.sort_values(by=['date'], ascending=True)
-print(pred_pb_df.head())
-# ---------------------------------------------------------------
-# Daten für Model vorbereiten
+plt.plot(weather_pb_df['date'], weather_pb_df['tavg'])
+plt.show()
 
-n_timestamp = 10
-train_days = int(len(weather_pb_df) * 0.66)  # number of days to train from
-n_epochs = 25
-filter_on = 1
+# --------------------------------------------------------
+# Data Preprocessing
 
+temp_data = weather_pb_df['tavg'].values
+temp_data = temp_data.reshape((-1,1))
 
+split_percent = 0.67
+split = int(split_percent*len(temp_data))
 
-train_set = weather_pb_df[0:train_days].reset_index(drop=True)
-test_set = weather_pb_df[train_days:].reset_index(drop=True)
-pred_set = pred_pb_df[:].reset_index(drop=True)
-training_set = train_set.iloc[:, 1:2].values
-testing_set = test_set.iloc[:, 1:2].values
-prediction_set = pred_set.iloc[:, 1:2].values
+temp_train = temp_data[:split]
+temp_test = temp_data[split:]
 
-print(training_set)
-print(testing_set)
-print(prediction_set)
-# ------------------------------------------------------------------
-# Daten Normalisiern
+date_train = weather_pb_df['date'][:split]
+date_test = weather_pb_df['date'][split:]
 
-sc = MinMaxScaler(feature_range = (0, 1))
-training_set_scaled = sc.fit_transform(training_set)
-testing_set_scaled = sc.fit_transform(testing_set)
-prediction_set_scaled = sc.fit_transform(prediction_set)
+print(len(temp_train))
+print(len(temp_test))
 
-X_train, y_train = data_split(training_set_scaled, n_timestamp)
-X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
+look_back = 30
+batch_size = 100
 
-X_test, y_test = data_split(testing_set_scaled, n_timestamp)
-X_test = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
+train_generator = TimeseriesGenerator(temp_train, temp_train, length=look_back, batch_size=batch_size)     
+test_generator = TimeseriesGenerator(temp_test, temp_test, length=look_back, batch_size=30)
 
-X_pred, y_predi = data_split(prediction_set_scaled, n_timestamp)
-X_pred = X_pred.reshape(X_pred.shape[0], X_pred.shape[1], 1)
+# ----------------------------------------------------
 
-# ------------------------------------------------------------------
-# Stacked LSTM
 model = Sequential()
-model.add(LSTM(50, activation='relu', return_sequences=True, input_shape=(X_train.shape[1], 1)))
-model.add(LSTM(50, activation='relu'))
+model.add(LSTM(128, activation='sigmoid', return_sequences=True, input_shape=(look_back,1)))
+model.add(Dropout(0.2))
+model.add(LSTM(60, activation='relu', return_sequences=True, input_shape=(look_back,1)))
+model.add(Dropout(0.2))
+model.add(LSTM(40, activation='relu'))
+model.add(Dropout(0.2))
 model.add(Dense(1))
-print(model.summary())
+model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
 
-#
-# Start training
-#
-model.compile(optimizer = 'adam', loss = 'mean_squared_error')
-history = model.fit(X_train, y_train, epochs = n_epochs, batch_size = 32)
-loss = history.history['loss']
-epochs = range(len(loss))
-print(history)
+history = model.fit(train_generator, epochs=num_epochs, verbose=1, batch_size = batch_size)
 
-# ------------------------------------------------------------------
+# ----------------------------------------------------
 # Prediction
-# y_predicted = model.predict(array(weather_pb_df["tavg"]))
-y_predicted = model.predict(X_pred)
+prediction = model.predict(test_generator)
 
-#
-# 'De-normalize' the data
-#
-y_predicted_descaled = sc.inverse_transform(y_predicted)
-y_train_descaled = sc.inverse_transform(y_train)
-y_test_descaled = sc.inverse_transform(y_test)
-y_pred = y_predicted.ravel()
-y_pred = [round(yx, 2) for yx in y_pred]
-y_tested = y_test.ravel()
+temp_train = temp_train.reshape((-1))
+temp_test = temp_test.reshape((-1))
+prediction = prediction.reshape((-1))
 
-# ------------------------------------------------------------------
-# Plotten
-plt.figure(figsize=(10, 6))
+rmse = sqrt(mean_squared_error(temp_test[:len(prediction)], prediction[:len(temp_test)]))
+print('RMSE: %.3f' % rmse)
 
-plt.subplot(3, 1, 1)
-plt.plot(weather_pb_df['tavg'], color = 'black', linewidth=1, label = 'True value')
-plt.ylabel("Temperature")
-plt.xlabel("Day")
-plt.title("All data")
+print(len(prediction))
+if(print_values):
+    plt.plot(date_train, temp_train, 'blue', label="Data")
+    plt.plot(date_test[:len(prediction)], prediction[:len(date_test)], 'green', label="Prediction")
+    plt.plot(date_test, temp_test, "orange", label="Real Value")
 
+    # If you don't like the break in the graph, change 90 to 89 in the above line
+    plt.gcf().autofmt_xdate()
+    plt.show()
 
-plt.subplot(3, 2, 3)
-plt.plot(pred_pb_df["tavg"], color = 'black', linewidth=1, label = 'True value')
-plt.plot(y_predicted_descaled, color = 'red',  linewidth=1, label = 'Predicted')
-plt.legend(frameon=False)
-plt.ylabel("Temperature")
-plt.xlabel("Day")
-plt.title("Predicted data (n days)")
+train_test_dict = {
+    "train_date": convertDateTimeListToString(date_train).tolist(),
+    "train_tavg": temp_train.tolist(),
+    "prediction_date": convertDateTimeListToString(date_test).tolist(),
+    "prediction_tavg": prediction[:len(date_test)].tolist(),
+    "valid_date": convertDateTimeListToString(date_test).tolist(),
+    "valid_tavg": temp_test.tolist()
+}
 
-plt.subplot(3, 2, 4)
-plt.plot(pred_pb_df["tavg"][0:75], color = 'black', linewidth=1, label = 'True value')
-plt.plot(y_predicted_descaled[0:75], color = 'red', label = 'Predicted')
-plt.legend(frameon=False)
-plt.ylabel("Temperature")
-plt.xlabel("Day")
-plt.title("Predicted data (first 75 days)")
+# ----------------------------------------------------
+# Forecasting
 
-# Prediction zurück an API geben
-pred_out_df = pd.DataFrame(data=y_predicted_descaled, columns=["pred_tavg"])
-pred_out_df["real_tavg"] = pred_pb_df['tavg']
-pred_out_df = pred_out_df.reset_index()
+forecast = predict(num_prediction, model)
+forecast = forecast.reshape((-1))
+forecast_dates = predict_dates(num_prediction)
 
-print(pred_out_df)
-saveDFtoCSV(pred_out_df)
+# print(forecast_dates)
+# print(forecast)
+
+if(print_values):
+    # plt.plot(date_train, temp_train, 'blue', label="Data")
+    # plt.plot(date_test[:len(prediction)], prediction, 'blue', label="Prediction")
+    plt.plot(date_test[3000:], temp_test[3000:], "blue", label="Real Value")
+    plt.plot(forecast_dates, forecast, "orange", label="Forecast")
+
+    plt.gcf().autofmt_xdate()
+    plt.show()
+
+runtime = time.time() - start_time
+
+print("--- %s seconds ---" % (runtime))
+
+# ----------------------------------------------------
+# Forecast an API zurückgeben
+
+forecast_dates = [item.to_pydatetime() for item in forecast_dates]
+forecast_dates = convertDateTimeListToString(forecast_dates)
+
+date_test = date_test[3000:].values
+date_test = convertDateTimeListToString(date_test)
+
+date_train = convertDateTimeListToString(date_train)
+validation_date = convertDateTimeListToString(date_test)
+
+api_dict = {
+  "forecast_tavg": forecast.tolist(),
+  "forecast_dates": forecast_dates.tolist(),
+  "past_date": date_test.tolist(),
+  "past_tavg": temp_test[3000:].tolist(),
+}
+
+# ----------------------------------------------------
+# Analysedetails zurückgeben
+analyse_dict = {
+  "epochs": num_epochs,
+  "days":num_prediction,
+  "rmse": rmse,
+  "loss_history": history.history['loss'],
+  "mae_history": history.history['mae'],
+  "runtime": runtime
+}
+api_dict.update(analyse_dict)
+api_dict.update(train_test_dict)
+
+print(api_dict)
+#print(api_dict)
+saveDictToJSON("output.json", api_dict)
+
+#saveDictToJSON("analyse.json", analyse_dict)
+
+# api_df = pd.DataFrame({'forecast_tavg': forecast})
+# api_df["forecast_dates"] = forecast_dates
+# api_df["past_date"] = pd.Series(date_test[3000:])
+# api_df["past_tavg"] = pd.Series(temp_test[3000:])
+
+# saveDFtoJSON(api_df)
