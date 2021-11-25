@@ -15,7 +15,7 @@ import glob
 
 from tensorflow.python.eager.monitoring import Metric
 
-from weather_api import saveDFtoJSON, getApiArguments
+from weather_api import saveDFtoJSON, getApiArguments, saveDictToJSON
 
 
 #make nunpy outputs easier to read
@@ -235,20 +235,36 @@ args = getApiArguments()
 df = pd.date_range(args['start'], args['end'], freq="d").to_frame()
 df.reset_index(drop=True, inplace=True)
 
+forecast_dates = pd.DataFrame()
+forecast_dates[0] = df[0].dt.strftime("%Y-%m-%d")
+
+past_dates = pd.DataFrame()
+past_dates[0] = test_features['date'] * divider
+past_dates[0] = pd.to_datetime(past_dates[0]).dt.strftime("%Y-%m-%d")
+
 df[0] = pd.to_numeric(pd.to_datetime(df[0].values)) / divider
 df[1] = 1000
 print(df)
 
 predict = dnn_model.predict(df)
 
+def toSimpleList(list):
+    result = []
+    for i in range(0, len(list)):
+        result.append(list[i][0])
+    return result
+
 plt.figure()
 plt.plot(predict)
 
 result = DataFrame()
 df[0] = pd.to_datetime(df[0] * divider)
-result['date'] = df[0].values
-result['tavg'] = predict.tolist()
 
-print(result.head())
+result = {
+    "forecast_tavg": toSimpleList(predict.tolist()),
+    "forecast_dates": toSimpleList(forecast_dates.values.tolist()),
+    "past_date": toSimpleList(past_dates.values.tolist()),
+    "past_tavg": test_labels.values.tolist()
+}
 
-saveDFtoJSON(pd.DataFrame(data=result))
+saveDictToJSON("output.json", result)
