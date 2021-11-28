@@ -1,3 +1,7 @@
+"""
+@author: Maximilian Ditz
+"""
+
 import os
 import glob
 import numpy as np

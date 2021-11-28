@@ -1,3 +1,7 @@
+"""
+@author: Maximilian Ditz
+"""
+
 import os
 from types import new_class
 from pandas.core.frame import DataFrame
