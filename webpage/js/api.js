@@ -94,7 +94,7 @@ async function weather_lr() {
             console.log(data); // parses JSON response into native JavaScript objects
             set_loading(false, false)
             document.getElementById('detailPanel').disabled = true;;
-            lr_forecast(data["past_date"], data["past_tavg"], data["forecast_dates"], data["forecast_tavg"]);
+            lr_forecast(data["past_date"], data["past_tavg"], data["forecast_dates"], data["forecast_tavg"], data["forecast_linear"]);
             // loss_chart(data["loss_history"])
             // mae_chart(data["mae_history"])
             // document.getElementById("days").textContent= "Forecast-Tage: " + data["days"];
@@ -191,9 +191,13 @@ function loss_chart(loss){
     });
 }
 
-function lr_forecast(old_dates, old_tavg, forecast_dates, forecast_tavg) {
+function lr_forecast(old_dates, old_tavg, forecast_dates, forecast_tavg, forecast_linear) {
     for(var i = 0; i < old_dates.length; i++){
         forecast_tavg.unshift(null);
+    }
+
+    for(var i = 0; i < old_dates.length; i++){
+        forecast_linear.unshift(null);
     }
 
     const ctx = document.getElementById('lrChart');
@@ -210,9 +214,16 @@ function lr_forecast(old_dates, old_tavg, forecast_dates, forecast_tavg) {
                 },
                 {
                     type: 'line',
-                    label: 'Forecast mit LR',
+                    label: 'Forecast mit DNN',
                     data: forecast_tavg,
                     borderColor: 'rgb(204, 24, 24)',
+                    tension: 0.1
+                },
+                {
+                    type: 'line',
+                    label: 'Forecast mit LR',
+                    data: forecast_linear,
+                    borderColor: 'rgb(204, 0, 0)',
                     tension: 0.1
                 },
         ],

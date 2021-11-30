@@ -1,13 +1,12 @@
 """
 @author: Kevin Liss
 """
+
+# __________________________Import Section__________________________
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from pandas.core.frame import DataFrame
-from pandas.io import feather_format
-from scipy.sparse import data
-import seaborn as sns
 
 import tensorflow as tf
 from tensorflow import keras
@@ -16,16 +15,22 @@ from tensorflow.keras import layers
 import os
 import glob
 
-from tensorflow.python.eager.monitoring import Metric
+from weather_api import getApiArguments, saveDictToJSON
 
-from weather_api import saveDFtoJSON, getApiArguments, saveDictToJSON
-
-
-#make nunpy outputs easier to read
+# __________________________Format Section__________________________
+# Ausgabe formatieren für bessere lesbarkeit
 np.set_printoptions(precision=3, suppress=True)
 
+# kontrolle der Tensorflow Version
 print("TF Version: ", tf.__version__)
+
+# Konstante zum einfachen rechnen von Daten in sekunden (160 * divier ~ 2020)
 divider = 10000000000000000
+test_results = {}
+
+# Funktion
+# eingabe: array aus Integer zur definition der einzulesenden Spalten
+# ausgabe: Gibt ein DataFrame zurück mit den eingelesenen Daten
 
 
 def get_data(cols_array):
@@ -42,35 +47,26 @@ def get_data(cols_array):
 
 df = get_data([0, 1, 9])
 
-df['date'] = pd.to_datetime(df['date'])
-df = df.sort_values('date')
+df['date'] = pd.to_datetime(df['date'])  # Formatiere Spalte "Date" zu DateTim
+df = df.sort_values('date')  # Sortiere nach Datum
+# Index des DataFrames nach sortieren falsch => neu bauen
 df = df.reset_index(drop=True)
 df['date'] = pd.to_numeric(df['date'])
+# datum in sekunden in menschenlesbar gestalten
 df['date'] = df['date'] / divider
 
 df['tavg'] = pd.to_numeric(df['tavg'])
 df['pres'] = pd.to_numeric(df['pres'])
 
-#clean data ( remove NA)
-df.isna().sum()
-
 for col in df:
-    df[col] = df[col].fillna(0)
+    df[col] = df[col].fillna(0)  # alle "NaN" werte mit "0" ersetzen
 
-# print(df.head())
-
-#split to train and test
+# Aufteilen der Daten in "Training" und "Test". Die ersten 90% => Trainingsdaten
 n = len(df)
 train_dataset = df[0:int(n*0.9)]
 test_dataset = df[int(n*0.9):]
 
-#see how data belongs together
-# sns.pairplot(train_dataset)
-
-#describe data
-# print(train_dataset.describe().transpose())
-
-#split label and data
+# Aufteilen der Trainings/Test Daten in X, Y Werte
 train_features = train_dataset.copy()
 test_features = test_dataset.copy()
 
@@ -81,7 +77,24 @@ date_min = np.amin(train_features['date'])
 date_max = np.amax(train_features['date'])
 date_dif = date_max - date_min
 
-#build keras
+# __________________________Einlesen der Forecast-X Werte__________________________
+args = getApiArguments()
+print(args)
+df_forecast = pd.date_range(args['start'], args['end'], freq="d").to_frame()
+df_forecast.reset_index(drop=True, inplace=True)
+
+forecast_dates = pd.DataFrame()
+forecast_dates[0] = df_forecast[0].dt.strftime("%Y-%m-%d")
+
+past_dates = pd.DataFrame()
+past_dates[0] = test_features['date'] * divider
+past_dates[0] = pd.to_datetime(past_dates[0]).dt.strftime("%Y-%m-%d")
+
+df_forecast[0] = pd.to_numeric(pd.to_datetime(df_forecast[0].values)) / divider
+df_forecast[1] = 1000
+print(df_forecast.head())
+
+# __________________________Performance Plotter__________________________
 
 
 def plot_loss(history):
@@ -103,50 +116,51 @@ def plot_tavg(x, y):
     plt.legend()
 
 
-# # first, set normalizer layer to data
+# Simpler Normalizer
 normalizer = tf.keras.layers.Normalization(axis=-1)
 normalizer.adapt(np.array(train_features))
 
 # Lin Reg 1 Var
 tavg = np.array(train_features['date'])
 
+# Normalizer anhand von X-Achse
 tavg_normalizer = layers.Normalization(input_shape=[1, ], axis=None)
 tavg_normalizer.adapt(tavg)
 
-# tavg_date = tf.keras.Sequential([
-#     tavg_normalizer,
-#     layers.Dense(1)
-# ])
 
-# tavg_date.compile(
-#     optimizer=tf.optimizers.Adam(0.1),
-#     loss="mse"
-# )
+# __________________________Linear Regression nach "Datum"__________________________
+tavg_date = tf.keras.Sequential([
+    tavg_normalizer,
+    layers.Dense(1)
+])
 
-# history = tavg_date.fit(
-#     train_features['date'],
-#     train_labels,
-#     epochs=100,
-#     verbose=0,
-#     validation_split=0.2
-# )
+tavg_date.compile(
+    optimizer=tf.optimizers.Adam(0.1),
+    loss="mse"
+)
 
-# hist = pd.DataFrame(history.history)
-# hist['epoch'] = history.epoch
-# hist.tail()
+history = tavg_date.fit(
+    train_features['date'],
+    train_labels,
+    epochs=100,
+    verbose=0,
+    validation_split=0.2
+)
 
-test_results = {}
-# test_results['date_model'] = tavg_date.evaluate(
-#     test_features['date'],
-#     test_labels,
-#     verbose=0
-# )
+hist = pd.DataFrame(history.history)
+hist['epoch'] = history.epoch
+hist.tail()
 
-# x = tf.linspace(date_min, date_max, date_dif)
-# y = tavg_date.predict(x)
+test_results['date_model'] = tavg_date.evaluate(
+    test_features['date'],
+    test_labels,
+    verbose=0
+)
 
+print(df_forecast[0])
+prediction_linear = tavg_date.predict(df_forecast[0])
 
-# Multiple Input
+# __________________________Linear Regression nach "Datum" und "Pressure"__________________________
 # linear_model = tf.keras.Sequential([
 #     normalizer,
 #     layers.Dense(1)
@@ -164,11 +178,10 @@ test_results = {}
 #     verbose=0,
 #     validation_split=0.2
 # )
+
 # test_results['linear_model'] = linear_model.evaluate(
 #     test_features['date'], test_labels, verbose=0
 # )
-
-# DNN single input
 
 
 def build_and_compile_model(norm):
@@ -186,7 +199,7 @@ def build_and_compile_model(norm):
     )
     return model
 
-
+# __________________________Neurales Netzt mit "Datum" als eingabe__________________________
 # dnn_date_model = build_and_compile_model(tavg_normalizer)
 # history = dnn_date_model.fit(
 #     train_features['date'],
@@ -205,7 +218,7 @@ def build_and_compile_model(norm):
 # )
 
 
-# DNN multiple
+# __________________________Neurales Netzt mit "Datum" und "Pressure" als eingabe__________________________
 dnn_model = build_and_compile_model(normalizer)
 history = dnn_model.fit(
     train_features,
@@ -214,9 +227,10 @@ history = dnn_model.fit(
     epochs=250,
     verbose=0
 )
-test_results['dnn_model'] = dnn_model.evaluate(test_features, test_labels, verbose=0)
+test_results['dnn_model'] = dnn_model.evaluate(
+    test_features, test_labels, verbose=0)
 
-#Perfofmance
+# Perfofmance ausgabe
 print(pd.DataFrame(test_results).T)
 
 print(test_features.head())
@@ -233,23 +247,10 @@ plt.figure()
 plt.plot(train_labels.values, "green")
 plt.plot(train_predictions, "red")
 
+predict = dnn_model.predict(df_forecast)
 
-args = getApiArguments()
-df = pd.date_range(args['start'], args['end'], freq="d").to_frame()
-df.reset_index(drop=True, inplace=True)
+# __________________________Speichern der Ausgabe__________________________
 
-forecast_dates = pd.DataFrame()
-forecast_dates[0] = df[0].dt.strftime("%Y-%m-%d")
-
-past_dates = pd.DataFrame()
-past_dates[0] = test_features['date'] * divider
-past_dates[0] = pd.to_datetime(past_dates[0]).dt.strftime("%Y-%m-%d")
-
-df[0] = pd.to_numeric(pd.to_datetime(df[0].values)) / divider
-df[1] = 1000
-print(df)
-
-predict = dnn_model.predict(df)
 
 def toSimpleList(list):
     result = []
@@ -257,17 +258,20 @@ def toSimpleList(list):
         result.append(list[i][0])
     return result
 
+
 plt.figure()
 plt.plot(predict)
 
 result = DataFrame()
-df[0] = pd.to_datetime(df[0] * divider)
+df_forecast[0] = pd.to_datetime(df_forecast[0] * divider)
 
+past_len = 365*2 # ~ 2 Jahre
 result = {
     "forecast_tavg": toSimpleList(predict.tolist()),
+    "forecast_linear": toSimpleList(prediction_linear.tolist()),
     "forecast_dates": toSimpleList(forecast_dates.values.tolist()),
-    "past_date": toSimpleList(past_dates[365:].values.tolist()),
-    "past_tavg": test_labels[365*2:].values.tolist()
+    "past_date": toSimpleList(past_dates[past_len:].values.tolist()),
+    "past_tavg": test_labels[past_len:].values.tolist()
 }
 
 saveDictToJSON("output.json", result)
