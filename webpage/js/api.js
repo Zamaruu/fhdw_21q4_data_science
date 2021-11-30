@@ -5,6 +5,12 @@ const chartCanvas = document.getElementById('lrChart');
 const detailPanel = document.getElementById('detailPanel');
 const train_test_chart = document.getElementById("knnPredChart");
 
+/**
+ * @author Maximilian Ditz
+ * @description Startet oder beendet die ladeanimation und zeigt die Charts nach erfolgreichem Laden an.
+ * @param {loading} Steuervariable (bool), gibt an ob gerade ein Ladevorgang durchgeführt wird
+ * @param {show_train_chart} Visibility-Variable für Trainigschart, falls vorhanden
+ */
 function set_loading(loading, show_train_chart) {
     if(loading === true){
         chartCanvas.style.display = "none";
@@ -24,12 +30,16 @@ function set_loading(loading, show_train_chart) {
     }
 }
 
+/**
+ * @author Maximilian Ditz
+ * @description Startet die Temepraturanalyse mittels LSTM-Netzwerk, und zeigt die Ergebnisse als zwei Charts an.
+ */
 async function weather_lstm() {
     const days_to_forecast = document.getElementById("forecast_days").value  
     const lstm_epochs = document.getElementById("lstm_epochs").value
 
     if(days_to_forecast != null  || lstm_epochs != null ){
-        const request = {"dates":"2021-01-10\n2021-01-11", "days": days_to_forecast, "epochs": lstm_epochs}
+        const request = {"days": days_to_forecast, "epochs": lstm_epochs}
         const url = base_url + "/lstm"
 
         console.log("makeing request to " + url)
@@ -70,6 +80,10 @@ async function weather_lstm() {
 
 }
 
+/**
+ * @author Maximilian Ditz
+ * @description Startet die Temepraturanalyse mittels Linearer Regression und kNN, und zeigt die Ergebnisse als Chart an.
+ */
 async function weather_lr() {
     //Lesen der Argumente
     const start = document.getElementById("forecast_start").value  
@@ -110,6 +124,10 @@ async function weather_lr() {
 
 }
 
+/**
+ * @author Maximilian Ditz
+ * @description Startet die Autokorrelation anhand der Wetterdaten, und zeigt die Ergebnisse als Charts an.
+ */
 async function weather_acf() {
     //Lesen der Argumente
     const start = document.getElementById("acf_start").value  
@@ -149,7 +167,11 @@ async function weather_acf() {
 }
 
 
-// Chart Functions
+// Chart Funktionen
+/**
+ * @author Maximilian Ditz
+ * @description Erzeugt ein Chart für die MAE-Werte anhand der Analysedetails.
+ */
 function mae_chart(mae){
     const ctx = document.getElementById('maeChart');
     const myChart = new Chart(ctx, {
@@ -168,6 +190,10 @@ function mae_chart(mae){
     });
 }
 
+/**
+ * @author Maximilian Ditz
+ * @description Erzeugt ein Chart für die LOSS-Werte anhand der Analysedetails.
+ */
 function loss_chart(loss){
     const ctx = document.getElementById('lossChart');
     const myChart = new Chart(ctx, {
@@ -186,6 +212,10 @@ function loss_chart(loss){
     });
 }
 
+/**
+ * @author Maximilian Ditz, Kevin Liss
+ * @description Erzeugt ein Chart für die Werte der Linearen Regression anhand der erhaltenen API-Daten.
+ */
 function lr_forecast(old_dates, old_tavg, forecast_dates, forecast_tavg, forecast_linear) {
     for(var i = 0; i < old_dates.length; i++){
         forecast_tavg.unshift(null);
@@ -226,6 +256,10 @@ function lr_forecast(old_dates, old_tavg, forecast_dates, forecast_tavg, forecas
     });
 }
 
+/**
+ * @author Maximilian Ditz
+ * @description Erzeugt ein Chart für die Werte der LSTM-Forecast-Analyse anhand der erhaltenen API-Daten.
+ */
 function lstm_forecast_chart(old_dates, old_tavg, forecast_dates, forecast_tavg) {
     for(var i = 0; i < old_dates.length; i++){
         forecast_tavg.unshift(null);
@@ -255,6 +289,10 @@ function lstm_forecast_chart(old_dates, old_tavg, forecast_dates, forecast_tavg)
     });
 }
 
+/**
+ * @author Maximilian Ditz
+ * @description Erzeugt ein Chart für die Werte der LSTM-Trainings-Werte anhand der erhaltenen API-Daten.
+ */
 function lstm_training_chart(train_dates, train_tavg, test_dates, test_tavg, pred_dates, pred_tavg){
     for(var i = 0; i < train_dates.length; i++){
         test_tavg.unshift(null);
@@ -293,12 +331,11 @@ function lstm_training_chart(train_dates, train_tavg, test_dates, test_tavg, pre
     });
 }
 
+/**
+ * @author Maximilian Ditz
+ * @description Erzeugt ein Chart für die Werte der Autokorrelationn anhand der erhaltenen API-Daten.
+ */
 function acf_chart(acf, ci_pos, ci_neg){
-    // for(var i = 0; i < train_dates.length; i++){
-    //     test_tavg.unshift(null);
-    //     pred_tavg.unshift(null);
-    // }
-
     x_values = Array.from(Array(acf.length).keys())
 
     const ctx = document.getElementById('lrChart');
