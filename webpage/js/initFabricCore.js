@@ -1,3 +1,10 @@
+/**
+ * @author Maximilian Ditz
+ * @description Diese Datei initilaisiert alle im Frontend verwendeten FabricJS-Elemente
+ * @link https://developer.microsoft.com/en-us/fabric-js/getstarted/getstarted
+ */
+
+
 var ButtonElements = document.querySelectorAll(".ms-Button");
     for (var i = 0; i < ButtonElements.length; i++) {
         new fabric['Button'](ButtonElements[i], function() {
