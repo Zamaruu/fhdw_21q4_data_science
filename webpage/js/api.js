@@ -25,7 +25,6 @@ function set_loading(loading, show_train_chart) {
 }
 
 async function weather_lstm() {
-    //Lesen der Argumente
     const days_to_forecast = document.getElementById("forecast_days").value  
     const lstm_epochs = document.getElementById("lstm_epochs").value
 
@@ -36,23 +35,26 @@ async function weather_lstm() {
         console.log("makeing request to " + url)
         try {
             set_loading(true, true)
+            
             const response = await fetch(url, {
-                method: 'POST', // *GET, POST, PUT, DELETE, etc.
+                method: 'POST',
                 headers: {
                 'Content-Type': 'application/json',
-                //'Access-Control-Allow-Origin': '*',
+              
                 },
-                body: JSON.stringify(request) // body data type must match "Content-Type" header
+                body: JSON.stringify(request) 
             });
+
             set_loading(false, true)
             console.log(response.status)
             const data = await response.json()
-            console.log(data); // parses JSON response into native JavaScript objects
+            console.log(data); 
             set_loading(false, true)
             lstm_forecast_chart(data["past_date"], data["past_tavg"], data["forecast_dates"], data["forecast_tavg"]);
             lstm_training_chart(data["train_date"], data["train_tavg"], data["valid_date"], data["valid_tavg"], data["prediction_date"], data["prediction_tavg"],)
             loss_chart(data["loss_history"])
             mae_chart(data["mae_history"])
+
             document.getElementById("days").textContent= "Forecast-Tage: " + data["days"];
             document.getElementById("epochs").textContent= "Epochen: "+ data["epochs"];
             document.getElementById("rmse").textContent= "RMSE: " + (data["rmse"]).toFixed(2);
@@ -80,26 +82,23 @@ async function weather_lr() {
         console.log("makeing request to " + url)
         try {
             set_loading(true, false)
+            
             const response = await fetch(url, {
-                method: 'POST', // *GET, POST, PUT, DELETE, etc.
+                method: 'POST', 
                 headers: {
                 'Content-Type': 'application/json',
-                //'Access-Control-Allow-Origin': '*',
                 },
-                body: JSON.stringify(request) // body data type must match "Content-Type" header
+                body: JSON.stringify(request) 
             });
+
             set_loading(false, false)
             console.log(response.status)
             const data = await response.json()
-            console.log(data); // parses JSON response into native JavaScript objects
+            console.log(data); 
             set_loading(false, false)
             document.getElementById('detailPanel').disabled = true;;
             lr_forecast(data["past_date"], data["past_tavg"], data["forecast_dates"], data["forecast_tavg"], data["forecast_linear"]);
-            // loss_chart(data["loss_history"])
-            // mae_chart(data["mae_history"])
-            // document.getElementById("days").textContent= "Forecast-Tage: " + data["days"];
-            // document.getElementById("epochs").textContent= "Epochen: "+ data["epochs"];
-            // document.getElementById("rmse").textContent= "RMSE: " + data["rmse"];
+
         } catch (error) {
             set_loading(false, false)
             console.log(error)
@@ -123,25 +122,21 @@ async function weather_acf() {
         console.log("makeing request to " + url)
         try {
             set_loading(true, false)
+
             const response = await fetch(url, {
-                method: 'POST', // *GET, POST, PUT, DELETE, etc.
+                method: 'POST', 
                 headers: {
                 'Content-Type': 'application/json',
-                //'Access-Control-Allow-Origin': '*',
                 },
-                body: JSON.stringify(request) // body data type must match "Content-Type" header
+                body: JSON.stringify(request)
             });
+
             set_loading(false, false)
             console.log(response.status)
             const data = await response.json()
-            console.log(data); // parses JSON response into native JavaScript objects
+            console.log(data);
             document.getElementById('detailPanel').disabled = true;
             acf_chart(data["acf"], data["ci_pos"], data["ci_neg"]);
-            // loss_chart(data["loss_history"])
-            // mae_chart(data["mae_history"])
-            // document.getElementById("days").textContent= "Forecast-Tage: " + data["days"];
-            // document.getElementById("epochs").textContent= "Epochen: "+ data["epochs"];
-            // document.getElementById("rmse").textContent= "RMSE: " + data["rmse"];
         } catch (error) {
             set_loading(false, false)
             console.log(error)
