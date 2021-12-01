@@ -16,6 +16,7 @@ import os
 import glob
 
 from weather_api import getApiArguments, saveDictToJSON
+from weather_gld import getGLD
 
 # __________________________Format Section__________________________
 # Ausgabe formatieren für bessere lesbarkeit
@@ -63,8 +64,8 @@ for col in df:
 
 # Aufteilen der Daten in "Training" und "Test". Die ersten 90% => Trainingsdaten
 n = len(df)
-train_dataset = df[0:int(n*0.9)]
-test_dataset = df[int(n*0.9):]
+train_dataset = df[0:int(n*0.7)]
+test_dataset = df[int(n*0.7):]
 
 # Aufteilen der Trainings/Test Daten in X, Y Werte
 train_features = train_dataset.copy()
@@ -142,7 +143,7 @@ tavg_date.compile(
 history = tavg_date.fit(
     train_features['date'],
     train_labels,
-    epochs=100,
+    epochs=150,
     verbose=0,
     validation_split=0.2
 )
@@ -151,7 +152,7 @@ hist = pd.DataFrame(history.history)
 hist['epoch'] = history.epoch
 hist.tail()
 
-test_results['date_model'] = tavg_date.evaluate(
+test_results['Linear'] = tavg_date.evaluate(
     test_features['date'],
     test_labels,
     verbose=0
@@ -188,14 +189,14 @@ def build_and_compile_model(norm):
     model = keras.Sequential([
         tf.keras.layers.InputLayer(input_shape=(1)),
         norm,
-        layers.Dense(128, activation='relu'),
+        layers.Dense(16, activation='relu'),
         layers.Dense(1)
     ])
 
     model.compile(
-        loss=tf.keras.losses.MeanSquaredLogarithmicError(),
+        loss=tf.keras.losses.MeanSquaredError(),
         optimizer=tf.keras.optimizers.Adam(0.001),
-        metrics=tf.keras.metrics.MeanSquaredLogarithmicError()
+        metrics=tf.keras.metrics.MeanSquaredError()
     )
     return model
 
@@ -224,14 +225,14 @@ history = dnn_model.fit(
     train_features,
     train_labels,
     validation_split=0.2,
-    epochs=250,
+    epochs=50,
     verbose=0
 )
-test_results['dnn_model'] = dnn_model.evaluate(
+test_results['Neuronales Netz'] = dnn_model.evaluate(
     test_features, test_labels, verbose=0)
 
 # Perfofmance ausgabe
-print(pd.DataFrame(test_results).T)
+print(test_results)
 
 print(test_features.head())
 test_predictions = dnn_model.predict(test_features)
@@ -265,13 +266,15 @@ plt.plot(predict)
 result = DataFrame()
 df_forecast[0] = pd.to_datetime(df_forecast[0] * divider)
 
-past_len = 365*2 # ~ 2 Jahre
+past_len = int(len(test_labels) - 365 * 2) # letzten ~ 2 Jahre
 result = {
     "forecast_tavg": toSimpleList(predict.tolist()),
     "forecast_linear": toSimpleList(prediction_linear.tolist()),
     "forecast_dates": toSimpleList(forecast_dates.values.tolist()),
     "past_date": toSimpleList(past_dates[past_len:].values.tolist()),
-    "past_tavg": test_labels[past_len:].values.tolist()
+    "past_tavg": test_labels[past_len:].values.tolist(),
+    "analysis": test_results,
+    "gld": getGLD(past_len, len(past_dates))
 }
 
 saveDictToJSON("output.json", result)

@@ -111,7 +111,7 @@ async function weather_lr() {
             console.log(data); 
             set_loading(false, false)
             document.getElementById('detailPanel').disabled = true;;
-            lr_forecast(data["past_date"], data["past_tavg"], data["forecast_dates"], data["forecast_tavg"], data["forecast_linear"]);
+            lr_forecast(data["past_date"], data["past_tavg"], data["forecast_dates"], data["forecast_tavg"], data["forecast_linear"], data["gld"]);
 
         } catch (error) {
             set_loading(false, false)
@@ -216,12 +216,9 @@ function loss_chart(loss){
  * @author Maximilian Ditz, Kevin Liss
  * @description Erzeugt ein Chart für die Werte der Linearen Regression anhand der erhaltenen API-Daten.
  */
-function lr_forecast(old_dates, old_tavg, forecast_dates, forecast_tavg, forecast_linear) {
+function lr_forecast(old_dates, old_tavg, forecast_dates, forecast_tavg, forecast_linear, gld) {
     for(var i = 0; i < old_dates.length; i++){
         forecast_tavg.unshift(null);
-    }
-
-    for(var i = 0; i < old_dates.length; i++){
         forecast_linear.unshift(null);
     }
 
@@ -241,14 +238,21 @@ function lr_forecast(old_dates, old_tavg, forecast_dates, forecast_tavg, forecas
                     type: 'line',
                     label: 'Forecast mit DNN',
                     data: forecast_tavg,
-                    borderColor: 'rgb(204, 24, 24)',
+                    borderColor: 'rgb(255, 187, 0)',
                     tension: 0.1
                 },
                 {
                     type: 'line',
                     label: 'Forecast mit LR',
                     data: forecast_linear,
-                    borderColor: 'rgb(204, 0, 0)',
+                    borderColor: 'rgb(250, 117, 0)',
+                    tension: 0.1
+                },
+                {
+                    type: 'line',
+                    label: 'Gleittender Durchschnitt',
+                    data: gld,
+                    borderColor: 'rgb(104, 95, 173)',
                     tension: 0.1
                 },
         ],
